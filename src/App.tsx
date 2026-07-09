@@ -5,6 +5,8 @@ import type { LucideIcon } from 'lucide-react'
 import {
   BarChart3,
   CalendarDays,
+  Check,
+  ChevronDown,
   Car,
   CircleDollarSign,
   CircleHelp,
@@ -331,6 +333,63 @@ function FieldCard({ label, Icon, children }: FieldCardProps) {
       <span className="field-card__label">{label}</span>
       <span className="field-card__control">{children}</span>
     </label>
+  )
+}
+
+
+type CategoryPickerProps = {
+  label: string
+  value: string
+  options: string[]
+  onChange: (value: string) => void
+}
+
+function CategoryPicker({ label, value, options, onChange }: CategoryPickerProps) {
+  const SelectedIcon = value === ALL_CATEGORIES_OPTION ? Tags : getCategoryIcon(value)
+
+  return (
+    <details className="field-card category-picker">
+      <summary className="category-picker__summary">
+        <span className="field-card__icon">
+          <SelectedIcon size={19} strokeWidth={2.1} />
+        </span>
+        <span className="field-card__label">{label}</span>
+        <span className="field-card__control category-picker__value">
+          <span>{value}</span>
+          <ChevronDown className="category-picker__chevron" size={18} />
+        </span>
+      </summary>
+
+      <div className="category-picker__menu">
+        {options.map((currentCategory) => {
+          const isActive = currentCategory === value
+          const OptionIcon =
+            currentCategory === ALL_CATEGORIES_OPTION
+              ? Tags
+              : getCategoryIcon(currentCategory)
+
+          return (
+            <button
+              className={`category-picker__option ${
+                isActive ? 'category-picker__option--active' : ''
+              }`}
+              key={currentCategory}
+              type="button"
+              onClick={(event) => {
+                onChange(currentCategory)
+                event.currentTarget.closest('details')?.removeAttribute('open')
+              }}
+            >
+              <span className="category-picker__option-icon">
+                <OptionIcon size={18} strokeWidth={2.1} />
+              </span>
+              <span>{currentCategory}</span>
+              {isActive && <Check className="category-picker__check" size={17} />}
+            </button>
+          )
+        })}
+      </div>
+    </details>
   )
 }
 
@@ -1145,19 +1204,12 @@ function App() {
                 </select>
               </FieldCard>
 
-              <FieldCard label="Категория" Icon={Tags}>
-                <select
-                  value={selectedCategory}
-                  onChange={(event) => setSelectedCategory(event.target.value)}
-                >
-                  <option value={ALL_CATEGORIES_OPTION}>{ALL_CATEGORIES_OPTION}</option>
-                  {allCategories.map((currentCategory) => (
-                    <option key={currentCategory} value={currentCategory}>
-                      {currentCategory}
-                    </option>
-                  ))}
-                </select>
-              </FieldCard>
+              <CategoryPicker
+                label="Категория"
+                value={selectedCategory}
+                options={[ALL_CATEGORIES_OPTION, ...allCategories]}
+                onChange={setSelectedCategory}
+              />
             </section>
 
             <section className="summary">
@@ -1274,18 +1326,12 @@ function App() {
                   />
                 </FieldCard>
 
-                <FieldCard label="Категория" Icon={Tags}>
-                  <select
-                    value={category}
-                    onChange={(event) => setCategory(event.target.value)}
-                  >
-                    {allCategories.map((currentCategory) => (
-                      <option key={currentCategory} value={currentCategory}>
-                        {currentCategory}
-                      </option>
-                    ))}
-                  </select>
-                </FieldCard>
+                <CategoryPicker
+                  label="Категория"
+                  value={category}
+                  options={allCategories}
+                  onChange={setCategory}
+                />
 
                 <FieldCard label="Описание" Icon={Pencil}>
                   <input
@@ -1357,20 +1403,12 @@ function App() {
                               />
                             </FieldCard>
 
-                            <FieldCard label="Категория" Icon={Tags}>
-                              <select
-                                value={editCategory}
-                                onChange={(event) =>
-                                  setEditCategory(event.target.value)
-                                }
-                              >
-                                {allCategories.map((currentCategory) => (
-                                  <option key={currentCategory} value={currentCategory}>
-                                    {currentCategory}
-                                  </option>
-                                ))}
-                              </select>
-                            </FieldCard>
+                            <CategoryPicker
+                              label="Категория"
+                              value={editCategory}
+                              options={allCategories}
+                              onChange={setEditCategory}
+                            />
 
                             <FieldCard label="Описание" Icon={Pencil}>
                               <input
@@ -1499,21 +1537,12 @@ function App() {
                 />
               </FieldCard>
 
-              <FieldCard label="Категория" Icon={Tags}>
-                <select
-                  value={reportCategory}
-                  onChange={(event) => setReportCategory(event.target.value)}
-                >
-                  <option value={ALL_CATEGORIES_OPTION}>
-                    {ALL_CATEGORIES_OPTION}
-                  </option>
-                  {allCategories.map((currentCategory) => (
-                    <option key={currentCategory} value={currentCategory}>
-                      {currentCategory}
-                    </option>
-                  ))}
-                </select>
-              </FieldCard>
+              <CategoryPicker
+                label="Категория"
+                value={reportCategory}
+                options={[ALL_CATEGORIES_OPTION, ...allCategories]}
+                onChange={setReportCategory}
+              />
             </div>
 
             {isReportDateRangeInvalid ? (
@@ -1874,18 +1903,12 @@ function App() {
                 />
               </FieldCard>
 
-              <FieldCard label="Категория" Icon={Tags}>
-                <select
-                  value={category}
-                  onChange={(event) => setCategory(event.target.value)}
-                >
-                  {allCategories.map((currentCategory) => (
-                    <option key={currentCategory} value={currentCategory}>
-                      {currentCategory}
-                    </option>
-                  ))}
-                </select>
-              </FieldCard>
+              <CategoryPicker
+                label="Категория"
+                value={category}
+                options={allCategories}
+                onChange={setCategory}
+              />
 
               <FieldCard label="Описание" Icon={Pencil}>
                 <input

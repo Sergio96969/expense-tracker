@@ -980,34 +980,26 @@ tr:last-child td {
     padding: 18px;
   }
 }
-/* Refined designer fields */
 
-.filters,
-.report-filters,
-.expense-form,
-.expense-edit-form,
-.category-form,
-.category-edit-form,
-.quick-add-form {
-  gap: 14px;
-}
 
-.filters label,
-.report-filters label,
-.expense-form label,
-.expense-edit-form label,
-.category-form label,
-.category-edit-form label,
-.quick-add-form label {
+/* Mature field system */
+.field-card {
   position: relative;
-  display: grid;
-  gap: 6px;
-  min-height: 82px;
-  padding: 16px 16px 14px 58px;
+  display: grid !important;
+  grid-template-columns: 42px minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  column-gap: 13px;
+  row-gap: 3px;
+  align-items: center;
+  min-height: 76px;
+  padding: 14px 16px;
   border: 1px solid rgba(148, 163, 184, 0.22);
   border-radius: 22px;
-  background: rgba(255, 255, 255, 0.72);
-  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.055);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(248, 250, 252, 0.72));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.86),
+    0 14px 36px rgba(15, 23, 42, 0.06);
   backdrop-filter: blur(14px);
   transition:
     transform 0.18s ease,
@@ -1016,212 +1008,289 @@ tr:last-child td {
     background 0.18s ease;
 }
 
-.filters label:hover,
-.report-filters label:hover,
-.expense-form label:hover,
-.expense-edit-form label:hover,
-.category-form label:hover,
-.category-edit-form label:hover,
-.quick-add-form label:hover {
+.field-card:hover {
   transform: translateY(-1px);
-  border-color: rgba(99, 102, 241, 0.32);
-  background: rgba(255, 255, 255, 0.9);
-  box-shadow: 0 14px 36px rgba(15, 23, 42, 0.08);
+  border-color: rgba(99, 102, 241, 0.28);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(248, 250, 252, 0.86));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.92),
+    0 18px 42px rgba(15, 23, 42, 0.085);
 }
 
-.filters label:focus-within,
-.report-filters label:focus-within,
-.expense-form label:focus-within,
-.expense-edit-form label:focus-within,
-.category-form label:focus-within,
-.category-edit-form label:focus-within,
-.quick-add-form label:focus-within {
-  border-color: rgba(99, 102, 241, 0.65);
+.field-card:focus-within {
+  border-color: rgba(99, 102, 241, 0.56);
+  background: rgba(255, 255, 255, 0.98);
   box-shadow:
     0 0 0 4px rgba(99, 102, 241, 0.09),
-    0 16px 38px rgba(15, 23, 42, 0.09);
+    0 18px 42px rgba(15, 23, 42, 0.09);
 }
 
-.filters label::before,
-.report-filters label::before,
-.expense-form label::before,
-.expense-edit-form label::before,
-.category-form label::before,
-.category-edit-form label::before,
-.quick-add-form label::before {
-  content: "";
-  position: absolute;
-  left: 16px;
-  top: 19px;
-  width: 30px;
-  height: 30px;
-  border-radius: 12px;
-  background: linear-gradient(145deg, #eef2ff, #ffffff);
-  box-shadow: inset 0 0 0 1px rgba(99, 102, 241, 0.14);
+.field-card__icon {
+  grid-row: 1 / 3;
+  display: grid !important;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 16px;
+  color: #4f46e5 !important;
+  background:
+    linear-gradient(145deg, rgba(238, 242, 255, 0.98), rgba(255, 255, 255, 0.86));
+  box-shadow:
+    inset 0 0 0 1px rgba(99, 102, 241, 0.12),
+    0 8px 20px rgba(99, 102, 241, 0.08);
 }
 
-.filters label::after,
-.report-filters label::after,
-.expense-form label::after,
-.expense-edit-form label::after,
-.category-form label::after,
-.category-edit-form label::after,
-.quick-add-form label::after {
-  content: "";
-  position: absolute;
-  left: 22px;
-  top: 25px;
-  width: 18px;
-  height: 18px;
-  background: #4f46e5;
-  mask: var(--field-icon) center / contain no-repeat;
-  -webkit-mask: var(--field-icon) center / contain no-repeat;
+.field-card__label {
+  grid-column: 2;
+  display: block !important;
+  color: #667085 !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  line-height: 1.2;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
 }
 
-.filters label span,
-.report-filters label span,
-.expense-form label span,
-.expense-edit-form label span,
-.category-form label span,
-.category-edit-form label span,
-.quick-add-form label span {
-  color: #667085;
-  font-size: 12px;
-  font-weight: 650;
-  letter-spacing: 0.01em;
-  text-transform: none;
+.field-card__control {
+  grid-column: 2;
+  display: block !important;
+  min-width: 0;
 }
 
-.filters input,
-.filters select,
-.report-filters input,
-.report-filters select,
-.expense-form input,
-.expense-form select,
-.expense-edit-form input,
-.expense-edit-form select,
-.category-form input,
-.category-edit-form input,
-.quick-add-form input,
-.quick-add-form select {
-  min-height: 30px;
+.field-card__control input,
+.field-card__control select {
+  width: 100%;
+  min-height: 28px;
   border: 0;
   border-radius: 0;
-  padding: 0 26px 0 0;
+  padding: 0 28px 0 0;
   background: transparent;
   color: #101828;
-  font-size: 17px;
-  font-weight: 560;
-  letter-spacing: -0.015em;
   box-shadow: none;
+  font-size: 17px;
+  font-weight: 520;
+  letter-spacing: -0.018em;
+  line-height: 1.3;
 }
 
-.filters input:focus,
-.filters select:focus,
-.report-filters input:focus,
-.report-filters select:focus,
-.expense-form input:focus,
-.expense-form select:focus,
-.expense-edit-form input:focus,
-.expense-edit-form select:focus,
-.category-form input:focus,
-.category-edit-form input:focus,
-.quick-add-form input:focus,
-.quick-add-form select:focus {
+.field-card__control input:focus,
+.field-card__control select:focus {
+  border: 0;
   background: transparent;
   box-shadow: none;
 }
 
-select {
-  appearance: none;
-}
-
-label:has(select) {
-  background-image:
-    linear-gradient(45deg, transparent 50%, #98a2b3 50%),
-    linear-gradient(135deg, #98a2b3 50%, transparent 50%);
-  background-position:
-    calc(100% - 21px) 47px,
-    calc(100% - 15px) 47px;
-  background-size: 6px 6px, 6px 6px;
-  background-repeat: no-repeat;
-}
-
-input::placeholder {
+.field-card__control input::placeholder {
   color: #98a2b3;
-  font-weight: 450;
+  font-weight: 420;
 }
 
-/* SVG field icons */
-.filters label:nth-child(1),
-.expense-form label:nth-child(1),
-.expense-edit-form label:nth-child(1),
-.quick-add-form label:nth-child(1),
-.report-filters label:nth-child(1),
-.report-filters label:nth-child(2) {
-  --field-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8 2v4M16 2v4M3 10h18'/%3E%3Crect x='3' y='4' width='18' height='18' rx='2'/%3E%3C/svg%3E");
+.field-card__control select {
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
 }
 
-.filters label:nth-child(2) {
-  --field-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 3h18v18H3z'/%3E%3Cpath d='M16 3v18M8 3v18M3 9h18M3 15h18'/%3E%3C/svg%3E");
+.field-card:has(select)::after {
+  content: "";
+  position: absolute;
+  right: 17px;
+  top: 46px;
+  width: 9px;
+  height: 9px;
+  border-right: 2px solid #98a2b3;
+  border-bottom: 2px solid #98a2b3;
+  transform: rotate(45deg);
+  pointer-events: none;
 }
 
-.filters label:nth-child(3),
-.expense-form label:nth-child(2),
-.expense-edit-form label:nth-child(2),
-.quick-add-form label:nth-child(2),
-.report-filters label:nth-child(3) {
-  --field-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20.59 13.41 13.42 20.58a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82Z'/%3E%3Ccircle cx='7' cy='7' r='1'/%3E%3C/svg%3E");
+.field-card__control input[type="date"] {
+  cursor: pointer;
 }
 
-.expense-form label:nth-child(3),
-.expense-edit-form label:nth-child(3),
-.quick-add-form label:nth-child(3) {
-  --field-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 20h9'/%3E%3Cpath d='M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z'/%3E%3C/svg%3E");
+.field-card__control input[type="date"]::-webkit-calendar-picker-indicator {
+  opacity: 0;
+  cursor: pointer;
 }
 
-.expense-form label:nth-child(4),
-.expense-edit-form label:nth-child(4),
-.quick-add-form label:nth-child(4) {
-  --field-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='2' y='5' width='20' height='14' rx='2'/%3E%3Cpath d='M2 10h20'/%3E%3C/svg%3E");
+.expense-form,
+.category-form,
+.expense-edit-form,
+.category-edit-form,
+.quick-add-form {
+  align-items: stretch;
 }
 
-.category-form label:nth-child(1),
-.category-edit-form label:nth-child(1) {
-  --field-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 9V5a1 1 0 0 1 1-1h4'/%3E%3Cpath d='M20 15v4a1 1 0 0 1-1 1h-4'/%3E%3Cpath d='M9 4l11 11-5 5L4 9Z'/%3E%3C/svg%3E");
+.category-form .button {
+  grid-column: auto;
+  min-height: 76px;
+}
+
+.expense-edit-form__actions {
+  align-items: stretch;
+}
+
+.expense-edit-form__actions .button,
+.expense-edit-form__actions .secondary-button {
+  min-height: 56px;
+}
+
+.quick-add-form .field-card {
+  min-height: 72px;
+}
+
+.quick-add-modal {
+  background:
+    radial-gradient(circle at top left, rgba(99, 102, 241, 0.12), transparent 18rem),
+    #ffffff;
 }
 
 @media (max-width: 720px) {
-  .filters label,
-  .report-filters label,
-  .expense-form label,
-  .expense-edit-form label,
-  .category-form label,
-  .category-edit-form label,
-  .quick-add-form label {
-    min-height: 76px;
-    padding-left: 56px;
+  .field-card {
+    min-height: 72px;
+    grid-template-columns: 40px minmax(0, 1fr);
+    padding: 13px 14px;
     border-radius: 20px;
   }
 
-  .filters input,
-  .filters select,
-  .report-filters input,
-  .report-filters select,
-  .expense-form input,
-  .expense-form select,
-  .expense-edit-form input,
-  .expense-edit-form select,
-  .category-form input,
-  .category-edit-form input,
-  .quick-add-form input,
-  .quick-add-form select {
+  .field-card__icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 15px;
+  }
+
+  .field-card__control input,
+  .field-card__control select {
     font-size: 16px;
-    font-weight: 540;
+    font-weight: 500;
+  }
+
+  .category-form .button {
+    grid-column: 1;
   }
 }
-/* Date field affordance */
 
+/* Custom category picker */
+.category-picker {
+  display: block !important;
+  padding: 0;
+  cursor: pointer;
+  z-index: 1;
+}
+
+.category-picker[open] {
+  z-index: 60;
+}
+
+.category-picker__summary {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  column-gap: 13px;
+  row-gap: 3px;
+  align-items: center;
+  min-height: 74px;
+  padding: 14px 16px;
+  list-style: none;
+  outline: none;
+}
+
+.category-picker__summary::-webkit-details-marker {
+  display: none;
+}
+
+.category-picker__value {
+  display: flex !important;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: #101828;
+  font-size: 17px;
+  font-weight: 540;
+  letter-spacing: -0.018em;
+  line-height: 1.3;
+}
+
+.category-picker__value span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.category-picker__chevron {
+  color: #98a2b3;
+  transition: transform 0.18s ease, color 0.18s ease;
+}
+
+.category-picker[open] .category-picker__chevron {
+  color: #4f46e5;
+  transform: rotate(180deg);
+}
+
+.category-picker__menu {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  left: 0;
+  z-index: 80;
+  display: grid;
+  gap: 6px;
+  max-height: 320px;
+  overflow-y: auto;
+  padding: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.26);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.16);
+  backdrop-filter: blur(18px);
+}
+
+.category-picker__option {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) 22px;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 48px;
+  border: 0;
+  border-radius: 16px;
+  padding: 7px 10px;
+  background: transparent;
+  color: #344054;
+  text-align: left;
+  font-size: 15px;
+  font-weight: 650;
+  transition: background 0.16s ease, color 0.16s ease, transform 0.16s ease;
+}
+
+.category-picker__option:hover {
+  transform: translateY(-1px);
+  background: rgba(99, 102, 241, 0.08);
+  color: #3730a3;
+}
+
+.category-picker__option--active {
+  background: linear-gradient(145deg, rgba(99, 102, 241, 0.14), rgba(238, 242, 255, 0.92));
+  color: #3730a3;
+}
+
+.category-picker__option-icon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 14px;
+  color: #4f46e5;
+  background: rgba(238, 242, 255, 0.9);
+}
+
+.category-picker__check {
+  justify-self: end;
+  color: #4f46e5;
+}
+
+/* Date field affordance */
 .field-card__control {
   position: relative;
 }
@@ -1251,34 +1320,270 @@ input::placeholder {
 .field-card:has(input[type="date"]) input[type="date"] {
   cursor: pointer;
 }
-/* Date field affordance */
 
-.field-card__control {
+@media (max-width: 720px) {
+  .category-picker__summary {
+    min-height: 70px;
+    padding: 13px 14px;
+  }
+
+  .category-picker__menu {
+    max-height: 280px;
+    border-radius: 20px;
+  }
+}
+/* Fix dropdown layering and date field click affordance */
+
+.panel,
+.filters,
+.report-filters,
+.expense-form,
+.expense-edit-form,
+.quick-add-form {
+  overflow: visible;
+}
+
+.field-card {
   position: relative;
 }
 
-.field-card:has(input[type="date"]) .field-card__control::after {
-  content: "";
-  position: absolute;
-  right: 2px;
-  top: 50%;
-  width: 9px;
-  height: 9px;
-  border-right: 2px solid #98a2b3;
-  border-bottom: 2px solid #98a2b3;
-  transform: translateY(-65%) rotate(45deg);
-  pointer-events: none;
+.field-card:has(.category-picker__menu) {
+  z-index: 50;
 }
 
-.field-card:has(input[type="date"]):hover .field-card__control::after,
-.field-card:has(input[type="date"]):focus-within .field-card__control::after {
-  border-color: #4f46e5;
+.field-card:has(.category-picker__menu) .category-picker {
+  position: relative;
+  z-index: 300;
+}
+
+.category-picker {
+  position: relative;
+}
+
+.category-picker--open {
+  z-index: 500;
+}
+
+.category-picker__menu {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  left: 0;
+  z-index: 1000;
+  max-height: 260px;
+  overflow-y: auto;
+  border: 1px solid rgba(148, 163, 184, 0.26);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow:
+    0 24px 70px rgba(15, 23, 42, 0.18),
+    0 0 0 1px rgba(255, 255, 255, 0.7) inset;
+  backdrop-filter: blur(18px);
+}
+
+.summary,
+.report-summary {
+  position: relative;
+  z-index: 1;
+}
+
+.summary__card {
+  position: relative;
+  z-index: 1;
 }
 
 .field-card:has(input[type="date"]) {
   cursor: pointer;
 }
 
-.field-card:has(input[type="date"]) input[type="date"] {
+.field-card:has(input[type="date"]) .field-card__control {
+  position: relative;
+}
+
+.field-card:has(input[type="date"]) .field-card__control::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 50%;
+  width: 18px;
+  height: 18px;
+  transform: translateY(-50%);
+  pointer-events: none;
+  background: #98a2b3;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8 2v4M16 2v4M3 10h18'/%3E%3Crect x='3' y='4' width='18' height='18' rx='2'/%3E%3C/svg%3E") center / contain no-repeat;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8 2v4M16 2v4M3 10h18'/%3E%3Crect x='3' y='4' width='18' height='18' rx='2'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+.field-card:has(input[type="date"]):hover .field-card__control::after,
+.field-card:has(input[type="date"]):focus-within .field-card__control::after {
+  background: #4f46e5;
+}
+
+.field-card input[type="date"] {
   cursor: pointer;
+  position: relative;
+}
+
+.field-card input[type="date"]::-webkit-calendar-picker-indicator {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  opacity: 0;
+}
+
+@media (max-width: 720px) {
+  .category-picker__menu {
+    max-height: 320px;
+  }
+}
+/* Fix category dropdown overlay above all nearby UI */
+
+.filters,
+.report-filters,
+.expense-form,
+.expense-edit-form,
+.quick-add-form,
+.category-form,
+.category-edit-form {
+  position: relative;
+  z-index: 2;
+  overflow: visible;
+}
+
+.filters:has(.category-picker--open),
+.report-filters:has(.category-picker--open),
+.expense-form:has(.category-picker--open),
+.expense-edit-form:has(.category-picker--open),
+.quick-add-form:has(.category-picker--open),
+.category-form:has(.category-picker--open),
+.category-edit-form:has(.category-picker--open) {
+  z-index: 200;
+}
+
+.field-card {
+  position: relative;
+}
+
+.field-card:has(.category-picker--open) {
+  z-index: 300;
+}
+
+.category-picker {
+  position: relative;
+}
+
+.category-picker--open {
+  position: relative;
+  z-index: 400;
+}
+
+.category-picker__menu {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+  right: 0;
+  z-index: 9999;
+  max-height: 280px;
+  overflow-y: auto;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow:
+    0 28px 80px rgba(15, 23, 42, 0.18),
+    0 8px 24px rgba(15, 23, 42, 0.12);
+  backdrop-filter: blur(18px);
+}
+
+.summary,
+.report-summary,
+.summary-grid,
+.report-grid,
+.summary-cards,
+.report-cards {
+  position: relative;
+  z-index: 1;
+}
+
+.summary__card,
+.report-summary__card,
+.stat-card,
+.report-card {
+  position: relative;
+  z-index: 1;
+}
+/* Fix category dropdown inside expense add/edit panels */
+
+.panel:has(.expense-form .category-picker--open),
+.panel:has(.expense-edit-form .category-picker--open),
+.panel:has(.quick-add-form .category-picker--open) {
+  position: relative;
+  z-index: 300;
+  overflow: visible;
+}
+
+.panel:has(.expense-form .category-picker--open) + .panel,
+.panel:has(.expense-edit-form .category-picker--open) + .panel {
+  position: relative;
+  z-index: 1;
+}
+
+.expense-form:has(.category-picker--open),
+.expense-edit-form:has(.category-picker--open),
+.quick-add-form:has(.category-picker--open) {
+  position: relative;
+  z-index: 500;
+  overflow: visible;
+}
+
+.expense-form .field-card:has(.category-picker--open),
+.expense-edit-form .field-card:has(.category-picker--open),
+.quick-add-form .field-card:has(.category-picker--open) {
+  position: relative;
+  z-index: 700;
+}
+
+.expense-form .category-picker__menu,
+.expense-edit-form .category-picker__menu,
+.quick-add-form .category-picker__menu {
+  z-index: 99999;
+}
+/* Correct fix for category picker based on details[open] */
+
+.panel {
+  position: relative;
+  overflow: visible;
+}
+
+.panel:has(.category-picker[open]) {
+  z-index: 1000;
+}
+
+.panel:has(.category-picker[open]) + .panel {
+  z-index: 1;
+}
+
+.filters:has(.category-picker[open]),
+.report-filters:has(.category-picker[open]),
+.expense-form:has(.category-picker[open]),
+.expense-edit-form:has(.category-picker[open]),
+.quick-add-form:has(.category-picker[open]) {
+  position: relative;
+  z-index: 1100;
+  overflow: visible;
+}
+
+.field-card:has(.category-picker[open]) {
+  position: relative;
+  z-index: 1200;
+}
+
+.category-picker[open] {
+  position: relative;
+  z-index: 1300;
+}
+
+.category-picker[open] .category-picker__menu {
+  z-index: 1400;
 }
