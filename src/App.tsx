@@ -1,6 +1,38 @@
 import * as XLSX from 'xlsx'
 import { useEffect, useMemo, useState } from 'react'
 import type { ChangeEvent, FormEvent } from 'react'
+import type { LucideIcon } from 'lucide-react'
+import {
+  BarChart3,
+  CalendarDays,
+  Car,
+  CircleDollarSign,
+  CircleHelp,
+  Download,
+  FileSpreadsheet,
+  Gamepad2,
+  GraduationCap,
+  HeartPulse,
+  Home,
+  House,
+  ListChecks,
+  MoreHorizontal,
+  Pencil,
+  Plus,
+  ReceiptText,
+  Repeat2,
+  Settings,
+  Shirt,
+  ShoppingCart,
+  Sparkles,
+  Tags,
+  Trash2,
+  TrendingUp,
+  Upload,
+  Utensils,
+  WalletCards,
+  X,
+} from 'lucide-react'
 import './App.css'
 
 type Expense = {
@@ -63,13 +95,27 @@ const MONTH_OPTIONS = [
   { value: '12', label: 'Декабрь' },
 ]
 
-const NAV_ITEMS: Array<{ id: AppSection; label: string }> = [
-  { id: 'dashboard', label: 'Главная' },
-  { id: 'expenses', label: 'Расходы' },
-  { id: 'reports', label: 'Отчеты' },
-  { id: 'categories', label: 'Категории' },
-  { id: 'settings', label: 'Настройки' },
+const NAV_ITEMS: Array<{ id: AppSection; label: string; Icon: LucideIcon }> = [
+  { id: 'dashboard', label: 'Главная', Icon: Home },
+  { id: 'expenses', label: 'Расходы', Icon: ReceiptText },
+  { id: 'reports', label: 'Отчеты', Icon: BarChart3 },
+  { id: 'categories', label: 'Категории', Icon: Tags },
+  { id: 'settings', label: 'Настройки', Icon: Settings },
 ]
+
+const CATEGORY_ICONS: Record<string, LucideIcon> = {
+  Продукты: ShoppingCart,
+  'Кафе и рестораны': Utensils,
+  Транспорт: Car,
+  Дом: House,
+  Здоровье: HeartPulse,
+  Одежда: Shirt,
+  Развлечения: Gamepad2,
+  Подписки: Repeat2,
+  Обучение: GraduationCap,
+  Другое: MoreHorizontal,
+  [FALLBACK_CATEGORY]: CircleHelp,
+}
 
 const ALL_CATEGORIES_OPTION = 'Все категории'
 
@@ -101,6 +147,10 @@ function hasCategoryName(categories: string[], name: string) {
   const normalizedName = normalizeCategoryName(name).toLowerCase()
 
   return categories.some((category) => category.toLowerCase() === normalizedName)
+}
+
+function getCategoryIcon(categoryName: string) {
+  return CATEGORY_ICONS[categoryName] ?? CircleHelp
 }
 
 function getCleanCustomCategories(candidate: unknown) {
@@ -821,7 +871,7 @@ function App() {
   function handleCreateBackup() {
     const backupData: BackupData = {
       appName: 'Expense Tracker',
-      version: '1.5.0',
+      version: '1.6.0',
       createdAt: new Date().toISOString(),
       expenses,
       customCategories,
@@ -991,33 +1041,47 @@ function App() {
     <main className="app">
       <section className="app__container">
         <header className="app__header">
-          <p className="app__eyebrow">Личный финансовый помощник</p>
-          <h1>Учет расходов</h1>
-          <p className="app__description">
-            Простое приложение для фиксации расходов, анализа трат и формирования отчетов.
-          </p>
+          <div className="app-brand">
+            <div className="app-brand__icon">
+              <WalletCards size={28} />
+            </div>
+
+            <div>
+              <p className="app__eyebrow">Личный финансовый помощник</p>
+              <h1>Учет расходов</h1>
+              <p className="app__description">
+                Простое приложение для фиксации расходов, анализа трат и формирования отчетов.
+              </p>
+            </div>
+          </div>
         </header>
 
         <nav className="app-nav">
-          {NAV_ITEMS.map((item) => (
-            <button
-              className={`app-nav__button ${
-                activeSection === item.id ? 'app-nav__button--active' : ''
-              }`}
-              key={item.id}
-              type="button"
-              onClick={() => setActiveSection(item.id)}
-            >
-              {item.label}
-            </button>
-          ))}
+          {NAV_ITEMS.map((item) => {
+            const Icon = item.Icon
+
+            return (
+              <button
+                className={`app-nav__button ${
+                  activeSection === item.id ? 'app-nav__button--active' : ''
+                }`}
+                key={item.id}
+                type="button"
+                onClick={() => setActiveSection(item.id)}
+              >
+                <Icon className="app-nav__icon" size={18} />
+                <span>{item.label}</span>
+              </button>
+            )
+          })}
         </nav>
 
         {message && (
           <div className="toast">
+            <Sparkles className="toast__icon" size={18} />
             <span>{message}</span>
-            <button type="button" onClick={() => setMessage('')}>
-              ×
+            <button type="button" onClick={() => setMessage('')} aria-label="Закрыть">
+              <X size={18} />
             </button>
           </div>
         )}
@@ -1025,8 +1089,13 @@ function App() {
         {activeSection === 'dashboard' && (
           <>
             <section className="section-heading">
-              <h2>Главная</h2>
-              <p>Краткая сводка по выбранному месяцу.</p>
+              <div className="section-heading__icon">
+                <Home size={22} />
+              </div>
+              <div>
+                <h2>Главная</h2>
+                <p>Краткая сводка по выбранному месяцу.</p>
+              </div>
             </section>
 
             <section className="filters">
@@ -1075,17 +1144,26 @@ function App() {
             </section>
 
             <section className="summary">
-              <article className="summary__card">
+              <article className="summary__card summary__card--primary">
+                <div className="summary__icon">
+                  <CircleDollarSign size={24} />
+                </div>
                 <span>Расходы за период</span>
                 <strong>{formatCurrency(totalAmount)}</strong>
               </article>
 
-              <article className="summary__card">
+              <article className="summary__card summary__card--success">
+                <div className="summary__icon">
+                  <ListChecks size={24} />
+                </div>
                 <span>Количество записей</span>
                 <strong>{filteredExpenses.length}</strong>
               </article>
 
-              <article className="summary__card">
+              <article className="summary__card summary__card--warning">
+                <div className="summary__icon">
+                  <TrendingUp size={24} />
+                </div>
                 <span>Средний расход</span>
                 <strong>{formatCurrency(averageAmount)}</strong>
               </article>
@@ -1103,27 +1181,46 @@ function App() {
                   type="button"
                   onClick={() => setActiveSection('expenses')}
                 >
-                  Все расходы
+                  <ReceiptText size={16} />
+                  <span>Все расходы</span>
                 </button>
               </div>
 
               {latestExpenses.length === 0 ? (
-                <div className="empty-state">За выбранный период расходов нет.</div>
+                <div className="empty-state">
+                  <div className="empty-state__icon">
+                    <Sparkles size={28} />
+                  </div>
+                  <p>За выбранный период расходов нет.</p>
+                </div>
               ) : (
                 <div className="expense-list">
-                  {latestExpenses.map((expense) => (
-                    <article className="expense-card" key={expense.id}>
-                      <div>
-                        <p className="expense-card__date">{formatDate(expense.date)}</p>
-                        <h3>{expense.description}</h3>
-                        <p className="expense-card__category">{expense.category}</p>
-                      </div>
+                  {latestExpenses.map((expense) => {
+                    const CategoryIcon = getCategoryIcon(expense.category)
 
-                      <div className="expense-card__side">
-                        <strong>{formatCurrency(expense.amount)}</strong>
-                      </div>
-                    </article>
-                  ))}
+                    return (
+                      <article className="expense-card" key={expense.id}>
+                        <div className="expense-card__main">
+                          <div className="expense-card__icon">
+                            <CategoryIcon size={20} />
+                          </div>
+
+                          <div>
+                            <p className="expense-card__date">
+                              <CalendarDays size={14} />
+                              <span>{formatDate(expense.date)}</span>
+                            </p>
+                            <h3>{expense.description}</h3>
+                            <p className="expense-card__category">{expense.category}</p>
+                          </div>
+                        </div>
+
+                        <div className="expense-card__side">
+                          <strong>{formatCurrency(expense.amount)}</strong>
+                        </div>
+                      </article>
+                    )
+                  })}
                 </div>
               )}
             </section>
@@ -1133,8 +1230,13 @@ function App() {
         {activeSection === 'expenses' && (
           <>
             <section className="section-heading">
-              <h2>Расходы</h2>
-              <p>Добавление, редактирование и удаление расходов.</p>
+              <div className="section-heading__icon">
+                <ReceiptText size={22} />
+              </div>
+              <div>
+                <h2>Расходы</h2>
+                <p>Добавление, редактирование и удаление расходов.</p>
+              </div>
             </section>
 
             <section className="panel">
@@ -1194,7 +1296,8 @@ function App() {
                 </label>
 
                 <button className="button" type="submit">
-                  Добавить расход
+                  <Plus size={18} />
+                  <span>Добавить расход</span>
                 </button>
               </form>
             </section>
@@ -1206,11 +1309,17 @@ function App() {
               </div>
 
               {sortedExpenses.length === 0 ? (
-                <div className="empty-state">За выбранный период расходов нет.</div>
+                <div className="empty-state">
+                  <div className="empty-state__icon">
+                    <ReceiptText size={28} />
+                  </div>
+                  <p>За выбранный период расходов нет.</p>
+                </div>
               ) : (
                 <div className="expense-list">
                   {sortedExpenses.map((expense) => {
                     const isEditing = editingExpenseId === expense.id
+                    const CategoryIcon = getCategoryIcon(expense.category)
 
                     return (
                       <article
@@ -1277,7 +1386,8 @@ function App() {
 
                             <div className="expense-edit-form__actions">
                               <button className="button" type="submit">
-                                Сохранить
+                                <Pencil size={18} />
+                                <span>Сохранить</span>
                               </button>
 
                               <button
@@ -1285,20 +1395,28 @@ function App() {
                                 type="button"
                                 onClick={cancelEditing}
                               >
-                                Отмена
+                                <X size={18} />
+                                <span>Отмена</span>
                               </button>
                             </div>
                           </form>
                         ) : (
                           <>
-                            <div>
-                              <p className="expense-card__date">
-                                {formatDate(expense.date)}
-                              </p>
-                              <h3>{expense.description}</h3>
-                              <p className="expense-card__category">
-                                {expense.category}
-                              </p>
+                            <div className="expense-card__main">
+                              <div className="expense-card__icon">
+                                <CategoryIcon size={20} />
+                              </div>
+
+                              <div>
+                                <p className="expense-card__date">
+                                  <CalendarDays size={14} />
+                                  <span>{formatDate(expense.date)}</span>
+                                </p>
+                                <h3>{expense.description}</h3>
+                                <p className="expense-card__category">
+                                  {expense.category}
+                                </p>
+                              </div>
                             </div>
 
                             <div className="expense-card__side">
@@ -1310,7 +1428,8 @@ function App() {
                                   type="button"
                                   onClick={() => startEditing(expense)}
                                 >
-                                  Редактировать
+                                  <Pencil size={14} />
+                                  <span>Редактировать</span>
                                 </button>
 
                                 <button
@@ -1318,7 +1437,8 @@ function App() {
                                   type="button"
                                   onClick={() => handleDelete(expense.id)}
                                 >
-                                  Удалить
+                                  <Trash2 size={14} />
+                                  <span>Удалить</span>
                                 </button>
                               </div>
                             </div>
@@ -1335,11 +1455,16 @@ function App() {
 
         {activeSection === 'reports' && (
           <section className="panel">
-            <div className="panel__header">
-              <h2>Отчет за период</h2>
-              <p>
-                Выберите даты и категорию, чтобы получить сводку и скачать Excel-отчет.
-              </p>
+            <div className="panel__header panel__header--with-icon">
+              <div className="section-heading__icon">
+                <BarChart3 size={22} />
+              </div>
+              <div>
+                <h2>Отчет за период</h2>
+                <p>
+                  Выберите даты и категорию, чтобы получить сводку и скачать Excel-отчет.
+                </p>
+              </div>
             </div>
 
             <div className="report-filters">
@@ -1387,36 +1512,54 @@ function App() {
 
             {isReportDateRangeInvalid ? (
               <div className="empty-state">
-                Дата начала отчета не может быть позже даты окончания.
+                <div className="empty-state__icon">
+                  <CalendarDays size={28} />
+                </div>
+                <p>Дата начала отчета не может быть позже даты окончания.</p>
               </div>
             ) : (
               <>
                 <section className="report-summary">
-                  <article className="summary__card">
+                  <article className="summary__card summary__card--primary">
+                    <div className="summary__icon">
+                      <CircleDollarSign size={24} />
+                    </div>
                     <span>Сумма отчета</span>
                     <strong>{formatCurrency(reportTotalAmount)}</strong>
                   </article>
 
-                  <article className="summary__card">
+                  <article className="summary__card summary__card--success">
+                    <div className="summary__icon">
+                      <ListChecks size={24} />
+                    </div>
                     <span>Операций</span>
                     <strong>{reportExpenses.length}</strong>
                   </article>
 
-                  <article className="summary__card">
+                  <article className="summary__card summary__card--warning">
+                    <div className="summary__icon">
+                      <TrendingUp size={24} />
+                    </div>
                     <span>Средний расход в день</span>
                     <strong>{formatCurrency(reportAveragePerDay)}</strong>
                   </article>
                 </section>
 
                 <button className="button" type="button" onClick={handleDownloadExcel}>
-                  Скачать Excel-отчет
+                  <FileSpreadsheet size={18} />
+                  <span>Скачать Excel-отчет</span>
                 </button>
 
                 <div className="report-block">
                   <h3>Расходы по категориям</h3>
 
                   {reportCategorySummary.length === 0 ? (
-                    <div className="empty-state">Нет данных за выбранный период.</div>
+                    <div className="empty-state">
+                      <div className="empty-state__icon">
+                        <Tags size={28} />
+                      </div>
+                      <p>Нет данных за выбранный период.</p>
+                    </div>
                   ) : (
                     <div className="table-wrapper">
                       <table>
@@ -1447,7 +1590,12 @@ function App() {
                   <h3>Расходы по датам</h3>
 
                   {reportDailySummary.length === 0 ? (
-                    <div className="empty-state">Нет данных за выбранный период.</div>
+                    <div className="empty-state">
+                      <div className="empty-state__icon">
+                        <CalendarDays size={28} />
+                      </div>
+                      <p>Нет данных за выбранный период.</p>
+                    </div>
                   ) : (
                     <div className="table-wrapper">
                       <table>
@@ -1476,7 +1624,12 @@ function App() {
                   <h3>Детализация</h3>
 
                   {reportExpenses.length === 0 ? (
-                    <div className="empty-state">Нет расходов для детализации.</div>
+                    <div className="empty-state">
+                      <div className="empty-state__icon">
+                        <ReceiptText size={28} />
+                      </div>
+                      <p>Нет расходов для детализации.</p>
+                    </div>
                   ) : (
                     <div className="table-wrapper">
                       <table>
@@ -1509,12 +1662,17 @@ function App() {
 
         {activeSection === 'categories' && (
           <section className="panel">
-            <div className="panel__header">
-              <h2>Категории</h2>
-              <p>
-                Управляйте категориями. Удаленные системные категории можно вернуть,
-                добавив категорию с таким же названием.
-              </p>
+            <div className="panel__header panel__header--with-icon">
+              <div className="section-heading__icon">
+                <Tags size={22} />
+              </div>
+              <div>
+                <h2>Категории</h2>
+                <p>
+                  Управляйте категориями. Удаленные системные категории можно вернуть,
+                  добавив категорию с таким же названием.
+                </p>
+              </div>
             </div>
 
             <form className="category-form" onSubmit={handleAddCategory}>
@@ -1529,7 +1687,8 @@ function App() {
               </label>
 
               <button className="button" type="submit">
-                Добавить категорию
+                <Plus size={18} />
+                <span>Добавить категорию</span>
               </button>
             </form>
 
@@ -1540,6 +1699,7 @@ function App() {
                   currentCategory,
                 )
                 const isEditingCategory = editingCategoryName === currentCategory
+                const CategoryIcon = getCategoryIcon(currentCategory)
 
                 return (
                   <article className="category-card" key={currentCategory}>
@@ -1561,7 +1721,8 @@ function App() {
 
                         <div className="category-card__actions">
                           <button className="edit-button" type="submit">
-                            Сохранить
+                            <Pencil size={14} />
+                            <span>Сохранить</span>
                           </button>
 
                           <button
@@ -1569,19 +1730,26 @@ function App() {
                             type="button"
                             onClick={cancelCategoryEditing}
                           >
-                            Отмена
+                            <X size={14} />
+                            <span>Отмена</span>
                           </button>
                         </div>
                       </form>
                     ) : (
                       <>
-                        <div>
-                          <h3>{currentCategory}</h3>
-                          <p>
-                            {isSystemCategory
-                              ? 'Системная категория'
-                              : 'Пользовательская категория'}
-                          </p>
+                        <div className="category-card__main">
+                          <div className="expense-card__icon">
+                            <CategoryIcon size={20} />
+                          </div>
+
+                          <div>
+                            <h3>{currentCategory}</h3>
+                            <p>
+                              {isSystemCategory
+                                ? 'Системная категория'
+                                : 'Пользовательская категория'}
+                            </p>
+                          </div>
                         </div>
 
                         <div className="category-card__actions">
@@ -1591,7 +1759,8 @@ function App() {
                               type="button"
                               onClick={() => startCategoryEditing(currentCategory)}
                             >
-                              Переименовать
+                              <Pencil size={14} />
+                              <span>Переименовать</span>
                             </button>
                           )}
 
@@ -1600,7 +1769,8 @@ function App() {
                             type="button"
                             onClick={() => handleDeleteCategory(currentCategory)}
                           >
-                            Удалить
+                            <Trash2 size={14} />
+                            <span>Удалить</span>
                           </button>
                         </div>
                       </>
@@ -1614,28 +1784,41 @@ function App() {
 
         {activeSection === 'settings' && (
           <section className="panel">
-            <div className="panel__header">
-              <h2>Настройки</h2>
-              <p>
-                Здесь можно создать резервную копию данных или восстановить их из файла.
-              </p>
+            <div className="panel__header panel__header--with-icon">
+              <div className="section-heading__icon">
+                <Settings size={22} />
+              </div>
+              <div>
+                <h2>Настройки</h2>
+                <p>
+                  Здесь можно создать резервную копию данных или восстановить их из файла.
+                </p>
+              </div>
             </div>
 
             <div className="settings-note">
-              <h3>Где хранятся данные?</h3>
-              <p>
-                Расходы и категории хранятся локально на этом устройстве. У каждого
-                телефона или компьютера будут свои данные.
-              </p>
+              <div className="settings-note__icon">
+                <WalletCards size={24} />
+              </div>
+
+              <div>
+                <h3>Где хранятся данные?</h3>
+                <p>
+                  Расходы и категории хранятся локально на этом устройстве. У каждого
+                  телефона или компьютера будут свои данные.
+                </p>
+              </div>
             </div>
 
             <div className="backup-actions">
               <button className="button" type="button" onClick={handleCreateBackup}>
-                Скачать резервную копию
+                <Download size={18} />
+                <span>Скачать резервную копию</span>
               </button>
 
               <label className="restore-button">
-                Восстановить из файла
+                <Upload size={18} />
+                <span>Восстановить из файла</span>
                 <input
                   type="file"
                   accept="application/json,.json"
@@ -1653,7 +1836,7 @@ function App() {
         onClick={() => setIsQuickAddOpen(true)}
         aria-label="Быстро добавить расход"
       >
-        +
+        <Plus size={34} />
       </button>
 
       {isQuickAddOpen && (
@@ -1671,7 +1854,7 @@ function App() {
                 onClick={() => setIsQuickAddOpen(false)}
                 aria-label="Закрыть"
               >
-                ×
+                <X size={20} />
               </button>
             </div>
 
@@ -1726,7 +1909,8 @@ function App() {
               </label>
 
               <button className="button" type="submit">
-                Добавить расход
+                <Plus size={18} />
+                <span>Добавить расход</span>
               </button>
             </form>
           </section>
