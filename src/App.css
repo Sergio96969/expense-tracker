@@ -347,6 +347,31 @@ h1 {
   gap: 12px;
 }
 
+.backup-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.restore-button {
+  display: grid;
+  place-items: center;
+  min-height: 48px;
+  border-radius: 16px;
+  background: #eef2ff;
+  color: #3730a3;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.restore-button:hover {
+  background: #e0e7ff;
+}
+
+.restore-button input {
+  display: none;
+}
+
 @media (max-width: 900px) {
   .filters {
     grid-template-columns: 1fr;
@@ -376,7 +401,8 @@ h1 {
     grid-template-columns: 1fr;
   }
 
-  .expense-edit-form__actions {
+  .expense-edit-form__actions,
+  .backup-actions {
     grid-template-columns: 1fr;
   }
 

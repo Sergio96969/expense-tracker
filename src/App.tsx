@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import type { FormEvent } from 'react'
+import type { ChangeEvent, FormEvent } from 'react'
 import './App.css'
 
 type Expense = {
@@ -8,6 +8,13 @@ type Expense = {
   category: string
   description: string
   amount: number
+}
+
+type BackupData = {
+  appName: string
+  version: string
+  createdAt: string
+  expenses: Expense[]
 }
 
 const STORAGE_KEY = 'expense-tracker-expenses'
@@ -70,6 +77,51 @@ function formatDate(date: string) {
     month: '2-digit',
     year: 'numeric',
   }).format(new Date(`${date}T00:00:00`))
+}
+
+function getBackupFileName() {
+  const now = new Date()
+  const day = String(now.getDate()).padStart(2, '0')
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const year = now.getFullYear()
+  const hours = String(now.getHours()).padStart(2, '0')
+  const minutes = String(now.getMinutes()).padStart(2, '0')
+
+  return `expense-tracker-backup-${day}-${month}-${year}-${hours}-${minutes}.json`
+}
+
+function isExpense(candidate: unknown): candidate is Expense {
+  if (typeof candidate !== 'object' || candidate === null) {
+    return false
+  }
+
+  const expense = candidate as Partial<Expense>
+
+  return (
+    typeof expense.id === 'string' &&
+    typeof expense.date === 'string' &&
+    typeof expense.category === 'string' &&
+    typeof expense.description === 'string' &&
+    typeof expense.amount === 'number'
+  )
+}
+
+function getExpensesFromImport(candidate: unknown): Expense[] | null {
+  if (Array.isArray(candidate) && candidate.every(isExpense)) {
+    return candidate
+  }
+
+  if (typeof candidate !== 'object' || candidate === null) {
+    return null
+  }
+
+  const backup = candidate as Partial<BackupData>
+
+  if (Array.isArray(backup.expenses) && backup.expenses.every(isExpense)) {
+    return backup.expenses
+  }
+
+  return null
 }
 
 function App() {
@@ -244,6 +296,64 @@ function App() {
     }
 
     setMessage('Расход удален')
+  }
+
+  function handleCreateBackup() {
+    const backupData: BackupData = {
+      appName: 'Expense Tracker',
+      version: '1.0.0',
+      createdAt: new Date().toISOString(),
+      expenses,
+    }
+
+    const backupContent = JSON.stringify(backupData, null, 2)
+    const blob = new Blob([backupContent], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+
+    link.href = url
+    link.download = getBackupFileName()
+    link.click()
+
+    URL.revokeObjectURL(url)
+
+    setMessage('Резервная копия создана')
+  }
+
+  async function handleRestoreBackup(event: ChangeEvent<HTMLInputElement>) {
+    const input = event.currentTarget
+    const file = input.files?.[0]
+
+    if (!file) {
+      return
+    }
+
+    try {
+      const content = await file.text()
+      const parsedData = JSON.parse(content) as unknown
+      const importedExpenses = getExpensesFromImport(parsedData)
+
+      if (!importedExpenses) {
+        setMessage('Файл резервной копии некорректен')
+        return
+      }
+
+      const shouldRestore = window.confirm(
+        'Текущие расходы будут заменены данными из резервной копии. Продолжить?',
+      )
+
+      if (!shouldRestore) {
+        return
+      }
+
+      setExpenses(importedExpenses)
+      cancelEditing()
+      setMessage('Данные восстановлены')
+    } catch {
+      setMessage('Не удалось восстановить данные из файла')
+    } finally {
+      input.value = ''
+    }
   }
 
   return (
@@ -514,6 +624,31 @@ function App() {
               })}
             </div>
           )}
+        </section>
+
+        <section className="panel">
+          <div className="panel__header">
+            <h2>Резервное копирование</h2>
+            <p>
+              Создайте файл с копией расходов, чтобы защитить данные перед будущими
+              обновлениями приложения.
+            </p>
+          </div>
+
+          <div className="backup-actions">
+            <button className="button" type="button" onClick={handleCreateBackup}>
+              Скачать резервную копию
+            </button>
+
+            <label className="restore-button">
+              Восстановить из файла
+              <input
+                type="file"
+                accept="application/json,.json"
+                onChange={handleRestoreBackup}
+              />
+            </label>
+          </div>
         </section>
       </section>
     </main>
