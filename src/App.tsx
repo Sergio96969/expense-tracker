@@ -17,18 +17,23 @@ type BackupData = {
   createdAt: string
   expenses: Expense[]
   customCategories?: string[]
+  hiddenDefaultCategories?: string[]
 }
 
 type ImportedData = {
   expenses: Expense[]
   customCategories: string[]
+  hiddenDefaultCategories: string[]
 }
 
 type AppSection = 'dashboard' | 'expenses' | 'reports' | 'categories' | 'settings'
 
 const STORAGE_KEY = 'expense-tracker-expenses'
 const CATEGORY_STORAGE_KEY = 'expense-tracker-custom-categories'
-const FALLBACK_CATEGORY = 'Другое'
+const HIDDEN_DEFAULT_CATEGORIES_STORAGE_KEY =
+  'expense-tracker-hidden-default-categories'
+
+const FALLBACK_CATEGORY = 'Без категории'
 
 const DEFAULT_CATEGORIES = [
   'Продукты',
@@ -40,7 +45,7 @@ const DEFAULT_CATEGORIES = [
   'Развлечения',
   'Подписки',
   'Обучение',
-  FALLBACK_CATEGORY,
+  'Другое',
 ]
 
 const MONTH_OPTIONS = [
@@ -130,6 +135,38 @@ function getCleanCustomCategories(candidate: unknown) {
   return result
 }
 
+function getCleanHiddenDefaultCategories(candidate: unknown) {
+  if (!Array.isArray(candidate)) {
+    return []
+  }
+
+  const result: string[] = []
+
+  candidate.forEach((item) => {
+    if (typeof item !== 'string') {
+      return
+    }
+
+    const categoryName = normalizeCategoryName(item)
+
+    if (!categoryName) {
+      return
+    }
+
+    if (!hasCategoryName(DEFAULT_CATEGORIES, categoryName)) {
+      return
+    }
+
+    if (hasCategoryName(result, categoryName)) {
+      return
+    }
+
+    result.push(categoryName)
+  })
+
+  return result
+}
+
 function formatCurrency(value: number) {
   return new Intl.NumberFormat('ru-RU', {
     style: 'currency',
@@ -200,6 +237,7 @@ function getImportedData(candidate: unknown): ImportedData | null {
     return {
       expenses: candidate,
       customCategories: [],
+      hiddenDefaultCategories: [],
     }
   }
 
@@ -213,6 +251,9 @@ function getImportedData(candidate: unknown): ImportedData | null {
     return {
       expenses: backup.expenses,
       customCategories: getCleanCustomCategories(backup.customCategories),
+      hiddenDefaultCategories: getCleanHiddenDefaultCategories(
+        backup.hiddenDefaultCategories,
+      ),
     }
   }
 
@@ -254,6 +295,24 @@ function App() {
     }
   })
 
+  const [hiddenDefaultCategories, setHiddenDefaultCategories] = useState<string[]>(
+    () => {
+      const savedHiddenCategories = localStorage.getItem(
+        HIDDEN_DEFAULT_CATEGORIES_STORAGE_KEY,
+      )
+
+      if (!savedHiddenCategories) {
+        return []
+      }
+
+      try {
+        return getCleanHiddenDefaultCategories(JSON.parse(savedHiddenCategories))
+      } catch {
+        return []
+      }
+    },
+  )
+
   const [date, setDate] = useState(getTodayDate())
   const [category, setCategory] = useState(DEFAULT_CATEGORIES[0])
   const [description, setDescription] = useState('')
@@ -278,8 +337,14 @@ function App() {
   const [reportCategory, setReportCategory] = useState(ALL_CATEGORIES_OPTION)
 
   const allCategories = useMemo(() => {
-    return [...DEFAULT_CATEGORIES, ...customCategories]
-  }, [customCategories])
+    const visibleDefaultCategories = DEFAULT_CATEGORIES.filter(
+      (categoryName) => !hasCategoryName(hiddenDefaultCategories, categoryName),
+    )
+
+    return [...visibleDefaultCategories, ...customCategories]
+  }, [customCategories, hiddenDefaultCategories])
+
+  const safeCategory = allCategories[0] ?? FALLBACK_CATEGORY
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(expenses))
@@ -288,6 +353,13 @@ function App() {
   useEffect(() => {
     localStorage.setItem(CATEGORY_STORAGE_KEY, JSON.stringify(customCategories))
   }, [customCategories])
+
+  useEffect(() => {
+    localStorage.setItem(
+      HIDDEN_DEFAULT_CATEGORIES_STORAGE_KEY,
+      JSON.stringify(hiddenDefaultCategories),
+    )
+  }, [hiddenDefaultCategories])
 
   useEffect(() => {
     if (!message) {
@@ -300,6 +372,35 @@ function App() {
 
     return () => window.clearTimeout(timerId)
   }, [message])
+
+  useEffect(() => {
+    if (allCategories.length === 0) {
+      setCustomCategories([FALLBACK_CATEGORY])
+      return
+    }
+
+    if (!hasCategoryName(allCategories, category)) {
+      setCategory(allCategories[0])
+    }
+
+    if (!hasCategoryName(allCategories, editCategory)) {
+      setEditCategory(allCategories[0])
+    }
+
+    if (
+      selectedCategory !== ALL_CATEGORIES_OPTION &&
+      !hasCategoryName(allCategories, selectedCategory)
+    ) {
+      setSelectedCategory(ALL_CATEGORIES_OPTION)
+    }
+
+    if (
+      reportCategory !== ALL_CATEGORIES_OPTION &&
+      !hasCategoryName(allCategories, reportCategory)
+    ) {
+      setReportCategory(ALL_CATEGORIES_OPTION)
+    }
+  }, [allCategories, category, editCategory, reportCategory, selectedCategory])
 
   const yearOptions = useMemo(() => {
     const currentYear = new Date().getFullYear()
@@ -458,7 +559,7 @@ function App() {
   function cancelEditing() {
     setEditingExpenseId(null)
     setEditDate('')
-    setEditCategory(DEFAULT_CATEGORIES[0])
+    setEditCategory(safeCategory)
     setEditDescription('')
     setEditAmount('')
   }
@@ -521,6 +622,20 @@ function App() {
 
     if (hasCategoryName(allCategories, categoryName)) {
       setMessage('Такая категория уже существует')
+      return
+    }
+
+    if (hasCategoryName(hiddenDefaultCategories, categoryName)) {
+      setHiddenDefaultCategories((currentCategories) =>
+        currentCategories.filter(
+          (currentCategory) =>
+            currentCategory.toLowerCase() !== categoryName.toLowerCase(),
+        ),
+      )
+
+      setNewCategoryName('')
+      setCategory(categoryName)
+      setMessage('Системная категория восстановлена')
       return
     }
 
@@ -607,11 +722,12 @@ function App() {
   }
 
   function handleDeleteCategory(categoryName: string) {
-    if (hasCategoryName(DEFAULT_CATEGORIES, categoryName)) {
-      setMessage('Системную категорию нельзя удалить')
+    if (allCategories.length <= 1) {
+      setMessage('Нельзя удалить последнюю категорию')
       return
     }
 
+    const isDefaultCategory = hasCategoryName(DEFAULT_CATEGORIES, categoryName)
     const isUsed = expenses.some((expense) => expense.category === categoryName)
 
     const shouldDelete = window.confirm(
@@ -624,9 +740,19 @@ function App() {
       return
     }
 
-    setCustomCategories((currentCategories) =>
-      currentCategories.filter((currentCategory) => currentCategory !== categoryName),
-    )
+    if (isDefaultCategory) {
+      setHiddenDefaultCategories((currentCategories) =>
+        hasCategoryName(currentCategories, categoryName)
+          ? currentCategories
+          : [...currentCategories, categoryName],
+      )
+    } else {
+      setCustomCategories((currentCategories) =>
+        currentCategories.filter(
+          (currentCategory) => currentCategory !== categoryName,
+        ),
+      )
+    }
 
     if (isUsed) {
       setExpenses((currentExpenses) =>
@@ -639,10 +765,21 @@ function App() {
             : expense,
         ),
       )
+
+      if (!hasCategoryName(allCategories, FALLBACK_CATEGORY)) {
+        setCustomCategories((currentCategories) => [
+          ...currentCategories,
+          FALLBACK_CATEGORY,
+        ])
+      }
     }
 
+    const nextCategory =
+      allCategories.find((currentCategory) => currentCategory !== categoryName) ??
+      FALLBACK_CATEGORY
+
     if (category === categoryName) {
-      setCategory(FALLBACK_CATEGORY)
+      setCategory(nextCategory)
     }
 
     if (selectedCategory === categoryName) {
@@ -654,7 +791,7 @@ function App() {
     }
 
     if (editCategory === categoryName) {
-      setEditCategory(FALLBACK_CATEGORY)
+      setEditCategory(nextCategory)
     }
 
     if (editingCategoryName === categoryName) {
@@ -667,10 +804,11 @@ function App() {
   function handleCreateBackup() {
     const backupData: BackupData = {
       appName: 'Expense Tracker',
-      version: '1.3.0',
+      version: '1.4.0',
       createdAt: new Date().toISOString(),
       expenses,
       customCategories,
+      hiddenDefaultCategories,
     }
 
     const backupContent = JSON.stringify(backupData, null, 2)
@@ -706,7 +844,7 @@ function App() {
       }
 
       const shouldRestore = window.confirm(
-        'Текущие расходы и пользовательские категории будут заменены данными из резервной копии. Продолжить?',
+        'Текущие расходы и категории будут заменены данными из резервной копии. Продолжить?',
       )
 
       if (!shouldRestore) {
@@ -715,6 +853,7 @@ function App() {
 
       setExpenses(importedData.expenses)
       setCustomCategories(importedData.customCategories)
+      setHiddenDefaultCategories(importedData.hiddenDefaultCategories)
       setSelectedCategory(ALL_CATEGORIES_OPTION)
       setReportCategory(ALL_CATEGORIES_OPTION)
       setCategory(DEFAULT_CATEGORIES[0])
@@ -1356,8 +1495,8 @@ function App() {
             <div className="panel__header">
               <h2>Категории</h2>
               <p>
-                Добавляйте собственные категории. Они будут доступны в расходах,
-                фильтрах, отчетах и резервных копиях.
+                Управляйте категориями. Удаленные системные категории можно вернуть,
+                добавив категорию с таким же названием.
               </p>
             </div>
 
@@ -1428,8 +1567,8 @@ function App() {
                           </p>
                         </div>
 
-                        {!isSystemCategory && (
-                          <div className="category-card__actions">
+                        <div className="category-card__actions">
+                          {!isSystemCategory && (
                             <button
                               className="edit-button"
                               type="button"
@@ -1437,16 +1576,16 @@ function App() {
                             >
                               Переименовать
                             </button>
+                          )}
 
-                            <button
-                              className="delete-button"
-                              type="button"
-                              onClick={() => handleDeleteCategory(currentCategory)}
-                            >
-                              Удалить
-                            </button>
-                          </div>
-                        )}
+                          <button
+                            className="delete-button"
+                            type="button"
+                            onClick={() => handleDeleteCategory(currentCategory)}
+                          >
+                            Удалить
+                          </button>
+                        </div>
                       </>
                     )}
                   </article>
