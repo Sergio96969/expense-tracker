@@ -178,20 +178,25 @@ h1 {
   color: #6b7280;
 }
 
-.expense-form {
+.expense-form,
+.category-form {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
 }
 
 .expense-form label,
-.expense-edit-form label {
+.expense-edit-form label,
+.category-form label,
+.category-edit-form label {
   display: grid;
   gap: 8px;
 }
 
 .expense-form label span,
-.expense-edit-form label span {
+.expense-edit-form label span,
+.category-form label span,
+.category-edit-form label span {
   color: #374151;
   font-size: 14px;
   font-weight: 700;
@@ -200,7 +205,9 @@ h1 {
 .expense-form input,
 .expense-form select,
 .expense-edit-form input,
-.expense-edit-form select {
+.expense-edit-form select,
+.category-form input,
+.category-edit-form input {
   width: 100%;
   min-height: 48px;
   border: 1px solid #d1d5db;
@@ -214,7 +221,9 @@ h1 {
 .expense-form input:focus,
 .expense-form select:focus,
 .expense-edit-form input:focus,
-.expense-edit-form select:focus {
+.expense-edit-form select:focus,
+.category-form input:focus,
+.category-edit-form input:focus {
   border-color: #4f46e5;
   box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.12);
 }
@@ -256,12 +265,18 @@ h1 {
   text-align: center;
 }
 
-.expense-list {
+.expense-list,
+.category-list {
   display: grid;
   gap: 12px;
 }
 
-.expense-card {
+.category-list {
+  margin-top: 20px;
+}
+
+.expense-card,
+.category-card {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -277,9 +292,16 @@ h1 {
   background: #f9fafb;
 }
 
-.expense-card h3 {
+.expense-card h3,
+.category-card h3 {
   margin: 4px 0;
   font-size: 18px;
+}
+
+.category-card p {
+  margin: 0;
+  color: #6b7280;
+  font-size: 14px;
 }
 
 .expense-card__date,
@@ -300,7 +322,8 @@ h1 {
   white-space: nowrap;
 }
 
-.expense-card__actions {
+.expense-card__actions,
+.category-card__actions {
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
@@ -334,10 +357,12 @@ h1 {
   background: #fecaca;
 }
 
-.expense-edit-form {
+.expense-edit-form,
+.category-edit-form {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
+  width: 100%;
 }
 
 .expense-edit-form__actions {
@@ -397,7 +422,9 @@ h1 {
   }
 
   .expense-form,
-  .expense-edit-form {
+  .expense-edit-form,
+  .category-form,
+  .category-edit-form {
     grid-template-columns: 1fr;
   }
 
@@ -406,7 +433,8 @@ h1 {
     grid-template-columns: 1fr;
   }
 
-  .expense-card {
+  .expense-card,
+  .category-card {
     align-items: flex-start;
     flex-direction: column;
   }
@@ -416,7 +444,8 @@ h1 {
     justify-items: start;
   }
 
-  .expense-card__actions {
+  .expense-card__actions,
+  .category-card__actions {
     width: 100%;
     justify-content: flex-start;
   }

@@ -15,9 +15,17 @@ type BackupData = {
   version: string
   createdAt: string
   expenses: Expense[]
+  customCategories?: string[]
+}
+
+type ImportedData = {
+  expenses: Expense[]
+  customCategories: string[]
 }
 
 const STORAGE_KEY = 'expense-tracker-expenses'
+const CATEGORY_STORAGE_KEY = 'expense-tracker-custom-categories'
+const FALLBACK_CATEGORY = 'Другое'
 
 const DEFAULT_CATEGORIES = [
   'Продукты',
@@ -29,7 +37,7 @@ const DEFAULT_CATEGORIES = [
   'Развлечения',
   'Подписки',
   'Обучение',
-  'Другое',
+  FALLBACK_CATEGORY,
 ]
 
 const MONTH_OPTIONS = [
@@ -61,6 +69,48 @@ function getCurrentYear() {
 
 function sanitizeAmountInput(value: string) {
   return value.replace(/[^\d.,]/g, '').replace(',', '.')
+}
+
+function normalizeCategoryName(value: string) {
+  return value.trim().replace(/\s+/g, ' ')
+}
+
+function hasCategoryName(categories: string[], name: string) {
+  const normalizedName = normalizeCategoryName(name).toLowerCase()
+
+  return categories.some((category) => category.toLowerCase() === normalizedName)
+}
+
+function getCleanCustomCategories(candidate: unknown) {
+  if (!Array.isArray(candidate)) {
+    return []
+  }
+
+  const result: string[] = []
+
+  candidate.forEach((item) => {
+    if (typeof item !== 'string') {
+      return
+    }
+
+    const categoryName = normalizeCategoryName(item)
+
+    if (!categoryName) {
+      return
+    }
+
+    if (hasCategoryName(DEFAULT_CATEGORIES, categoryName)) {
+      return
+    }
+
+    if (hasCategoryName(result, categoryName)) {
+      return
+    }
+
+    result.push(categoryName)
+  })
+
+  return result
 }
 
 function formatCurrency(value: number) {
@@ -106,9 +156,12 @@ function isExpense(candidate: unknown): candidate is Expense {
   )
 }
 
-function getExpensesFromImport(candidate: unknown): Expense[] | null {
+function getImportedData(candidate: unknown): ImportedData | null {
   if (Array.isArray(candidate) && candidate.every(isExpense)) {
-    return candidate
+    return {
+      expenses: candidate,
+      customCategories: [],
+    }
   }
 
   if (typeof candidate !== 'object' || candidate === null) {
@@ -118,7 +171,10 @@ function getExpensesFromImport(candidate: unknown): Expense[] | null {
   const backup = candidate as Partial<BackupData>
 
   if (Array.isArray(backup.expenses) && backup.expenses.every(isExpense)) {
-    return backup.expenses
+    return {
+      expenses: backup.expenses,
+      customCategories: getCleanCustomCategories(backup.customCategories),
+    }
   }
 
   return null
@@ -139,6 +195,20 @@ function App() {
     }
   })
 
+  const [customCategories, setCustomCategories] = useState<string[]>(() => {
+    const savedCategories = localStorage.getItem(CATEGORY_STORAGE_KEY)
+
+    if (!savedCategories) {
+      return []
+    }
+
+    try {
+      return getCleanCustomCategories(JSON.parse(savedCategories))
+    } catch {
+      return []
+    }
+  })
+
   const [date, setDate] = useState(getTodayDate())
   const [category, setCategory] = useState(DEFAULT_CATEGORIES[0])
   const [description, setDescription] = useState('')
@@ -154,9 +224,21 @@ function App() {
   const [editDescription, setEditDescription] = useState('')
   const [editAmount, setEditAmount] = useState('')
 
+  const [newCategoryName, setNewCategoryName] = useState('')
+  const [editingCategoryName, setEditingCategoryName] = useState<string | null>(null)
+  const [editedCategoryName, setEditedCategoryName] = useState('')
+
+  const allCategories = useMemo(() => {
+    return [...DEFAULT_CATEGORIES, ...customCategories]
+  }, [customCategories])
+
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(expenses))
   }, [expenses])
+
+  useEffect(() => {
+    localStorage.setItem(CATEGORY_STORAGE_KEY, JSON.stringify(customCategories))
+  }, [customCategories])
 
   useEffect(() => {
     if (!message) {
@@ -298,12 +380,160 @@ function App() {
     setMessage('Расход удален')
   }
 
+  function handleAddCategory(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+
+    const categoryName = normalizeCategoryName(newCategoryName)
+
+    if (!categoryName) {
+      setMessage('Введите название категории')
+      return
+    }
+
+    if (hasCategoryName(allCategories, categoryName)) {
+      setMessage('Такая категория уже существует')
+      return
+    }
+
+    setCustomCategories((currentCategories) => [...currentCategories, categoryName])
+    setNewCategoryName('')
+    setCategory(categoryName)
+    setMessage('Категория добавлена')
+  }
+
+  function startCategoryEditing(categoryName: string) {
+    setEditingCategoryName(categoryName)
+    setEditedCategoryName(categoryName)
+  }
+
+  function cancelCategoryEditing() {
+    setEditingCategoryName(null)
+    setEditedCategoryName('')
+  }
+
+  function handleRenameCategory(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+
+    if (!editingCategoryName) {
+      return
+    }
+
+    const oldCategoryName = editingCategoryName
+    const newName = normalizeCategoryName(editedCategoryName)
+
+    if (!newName) {
+      setMessage('Введите новое название категории')
+      return
+    }
+
+    if (oldCategoryName.toLowerCase() === newName.toLowerCase()) {
+      cancelCategoryEditing()
+      return
+    }
+
+    const categoriesWithoutCurrent = allCategories.filter(
+      (currentCategory) => currentCategory !== oldCategoryName,
+    )
+
+    if (hasCategoryName(categoriesWithoutCurrent, newName)) {
+      setMessage('Такая категория уже существует')
+      return
+    }
+
+    setCustomCategories((currentCategories) =>
+      currentCategories.map((currentCategory) =>
+        currentCategory === oldCategoryName ? newName : currentCategory,
+      ),
+    )
+
+    setExpenses((currentExpenses) =>
+      currentExpenses.map((expense) =>
+        expense.category === oldCategoryName
+          ? {
+              ...expense,
+              category: newName,
+            }
+          : expense,
+      ),
+    )
+
+    if (category === oldCategoryName) {
+      setCategory(newName)
+    }
+
+    if (selectedCategory === oldCategoryName) {
+      setSelectedCategory(newName)
+    }
+
+    if (editCategory === oldCategoryName) {
+      setEditCategory(newName)
+    }
+
+    cancelCategoryEditing()
+    setMessage('Категория переименована')
+  }
+
+  function handleDeleteCategory(categoryName: string) {
+    if (hasCategoryName(DEFAULT_CATEGORIES, categoryName)) {
+      setMessage('Системную категорию нельзя удалить')
+      return
+    }
+
+    const isUsed = expenses.some((expense) => expense.category === categoryName)
+
+    const shouldDelete = window.confirm(
+      isUsed
+        ? `Категория «${categoryName}» уже используется в расходах. Расходы будут перенесены в категорию «${FALLBACK_CATEGORY}». Продолжить?`
+        : `Удалить категорию «${categoryName}»?`,
+    )
+
+    if (!shouldDelete) {
+      return
+    }
+
+    setCustomCategories((currentCategories) =>
+      currentCategories.filter((currentCategory) => currentCategory !== categoryName),
+    )
+
+    if (isUsed) {
+      setExpenses((currentExpenses) =>
+        currentExpenses.map((expense) =>
+          expense.category === categoryName
+            ? {
+                ...expense,
+                category: FALLBACK_CATEGORY,
+              }
+            : expense,
+        ),
+      )
+    }
+
+    if (category === categoryName) {
+      setCategory(FALLBACK_CATEGORY)
+    }
+
+    if (selectedCategory === categoryName) {
+      setSelectedCategory('Все категории')
+    }
+
+    if (editCategory === categoryName) {
+      setEditCategory(FALLBACK_CATEGORY)
+    }
+
+    if (editingCategoryName === categoryName) {
+      cancelCategoryEditing()
+    }
+
+    setMessage('Категория удалена')
+  }
+
   function handleCreateBackup() {
     const backupData: BackupData = {
       appName: 'Expense Tracker',
-      version: '1.0.0',
+      version: '1.1.0',
       createdAt: new Date().toISOString(),
       expenses,
+      customCategories,
     }
 
     const backupContent = JSON.stringify(backupData, null, 2)
@@ -331,23 +561,27 @@ function App() {
     try {
       const content = await file.text()
       const parsedData = JSON.parse(content) as unknown
-      const importedExpenses = getExpensesFromImport(parsedData)
+      const importedData = getImportedData(parsedData)
 
-      if (!importedExpenses) {
+      if (!importedData) {
         setMessage('Файл резервной копии некорректен')
         return
       }
 
       const shouldRestore = window.confirm(
-        'Текущие расходы будут заменены данными из резервной копии. Продолжить?',
+        'Текущие расходы и пользовательские категории будут заменены данными из резервной копии. Продолжить?',
       )
 
       if (!shouldRestore) {
         return
       }
 
-      setExpenses(importedExpenses)
+      setExpenses(importedData.expenses)
+      setCustomCategories(importedData.customCategories)
+      setSelectedCategory('Все категории')
+      setCategory(DEFAULT_CATEGORIES[0])
       cancelEditing()
+      cancelCategoryEditing()
       setMessage('Данные восстановлены')
     } catch {
       setMessage('Не удалось восстановить данные из файла')
@@ -414,7 +648,7 @@ function App() {
               onChange={(event) => setSelectedCategory(event.target.value)}
             >
               <option value="Все категории">Все категории</option>
-              {DEFAULT_CATEGORIES.map((currentCategory) => (
+              {allCategories.map((currentCategory) => (
                 <option key={currentCategory} value={currentCategory}>
                   {currentCategory}
                 </option>
@@ -465,7 +699,7 @@ function App() {
                 value={category}
                 onChange={(event) => setCategory(event.target.value)}
               >
-                {DEFAULT_CATEGORIES.map((currentCategory) => (
+                {allCategories.map((currentCategory) => (
                   <option key={currentCategory} value={currentCategory}>
                     {currentCategory}
                   </option>
@@ -543,7 +777,7 @@ function App() {
                             value={editCategory}
                             onChange={(event) => setEditCategory(event.target.value)}
                           >
-                            {DEFAULT_CATEGORIES.map((currentCategory) => (
+                            {allCategories.map((currentCategory) => (
                               <option key={currentCategory} value={currentCategory}>
                                 {currentCategory}
                               </option>
@@ -624,6 +858,109 @@ function App() {
               })}
             </div>
           )}
+        </section>
+
+        <section className="panel">
+          <div className="panel__header">
+            <h2>Категории</h2>
+            <p>
+              Добавляйте собственные категории. Они будут доступны в расходах,
+              фильтрах и резервных копиях.
+            </p>
+          </div>
+
+          <form className="category-form" onSubmit={handleAddCategory}>
+            <label>
+              <span>Новая категория</span>
+              <input
+                type="text"
+                placeholder="Например: Автомобиль"
+                value={newCategoryName}
+                onChange={(event) => setNewCategoryName(event.target.value)}
+              />
+            </label>
+
+            <button className="button" type="submit">
+              Добавить категорию
+            </button>
+          </form>
+
+          <div className="category-list">
+            {allCategories.map((currentCategory) => {
+              const isSystemCategory = hasCategoryName(
+                DEFAULT_CATEGORIES,
+                currentCategory,
+              )
+              const isEditingCategory = editingCategoryName === currentCategory
+
+              return (
+                <article className="category-card" key={currentCategory}>
+                  {isEditingCategory ? (
+                    <form
+                      className="category-edit-form"
+                      onSubmit={handleRenameCategory}
+                    >
+                      <label>
+                        <span>Название категории</span>
+                        <input
+                          type="text"
+                          value={editedCategoryName}
+                          onChange={(event) =>
+                            setEditedCategoryName(event.target.value)
+                          }
+                        />
+                      </label>
+
+                      <div className="category-card__actions">
+                        <button className="edit-button" type="submit">
+                          Сохранить
+                        </button>
+
+                        <button
+                          className="delete-button"
+                          type="button"
+                          onClick={cancelCategoryEditing}
+                        >
+                          Отмена
+                        </button>
+                      </div>
+                    </form>
+                  ) : (
+                    <>
+                      <div>
+                        <h3>{currentCategory}</h3>
+                        <p>
+                          {isSystemCategory
+                            ? 'Системная категория'
+                            : 'Пользовательская категория'}
+                        </p>
+                      </div>
+
+                      {!isSystemCategory && (
+                        <div className="category-card__actions">
+                          <button
+                            className="edit-button"
+                            type="button"
+                            onClick={() => startCategoryEditing(currentCategory)}
+                          >
+                            Переименовать
+                          </button>
+
+                          <button
+                            className="delete-button"
+                            type="button"
+                            onClick={() => handleDeleteCategory(currentCategory)}
+                          >
+                            Удалить
+                          </button>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </article>
+              )
+            })}
+          </div>
         </section>
 
         <section className="panel">
