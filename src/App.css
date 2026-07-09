@@ -90,7 +90,8 @@ h1 {
   line-height: 1;
 }
 
-.filters {
+.filters,
+.report-filters {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 16px;
@@ -101,19 +102,23 @@ h1 {
   box-shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
 }
 
-.filters label {
+.filters label,
+.report-filters label {
   display: grid;
   gap: 8px;
 }
 
-.filters label span {
+.filters label span,
+.report-filters label span {
   color: #374151;
   font-size: 14px;
   font-weight: 700;
 }
 
 .filters input,
-.filters select {
+.filters select,
+.report-filters input,
+.report-filters select {
   width: 100%;
   min-height: 48px;
   border: 1px solid #d1d5db;
@@ -125,12 +130,15 @@ h1 {
 }
 
 .filters input:focus,
-.filters select:focus {
+.filters select:focus,
+.report-filters input:focus,
+.report-filters select:focus {
   border-color: #4f46e5;
   box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.12);
 }
 
-.summary {
+.summary,
+.report-summary {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 16px;
@@ -372,6 +380,53 @@ h1 {
   gap: 12px;
 }
 
+.report-block {
+  margin-top: 24px;
+}
+
+.report-block h3 {
+  margin: 0 0 12px;
+  font-size: 20px;
+}
+
+.table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+}
+
+table {
+  width: 100%;
+  min-width: 680px;
+  border-collapse: collapse;
+  background: #ffffff;
+}
+
+th,
+td {
+  padding: 14px 16px;
+  border-bottom: 1px solid #e5e7eb;
+  text-align: left;
+  vertical-align: top;
+}
+
+th {
+  background: #f9fafb;
+  color: #374151;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+td {
+  color: #111827;
+  font-size: 14px;
+}
+
+tr:last-child td {
+  border-bottom: 0;
+}
+
 .backup-actions {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -398,7 +453,8 @@ h1 {
 }
 
 @media (max-width: 900px) {
-  .filters {
+  .filters,
+  .report-filters {
     grid-template-columns: 1fr;
   }
 }
@@ -408,11 +464,13 @@ h1 {
     padding: 20px 12px 32px;
   }
 
-  .filters {
+  .filters,
+  .report-filters {
     border-radius: 20px;
   }
 
-  .summary {
+  .summary,
+  .report-summary {
     grid-template-columns: 1fr;
   }
 
@@ -448,5 +506,9 @@ h1 {
   .category-card__actions {
     width: 100%;
     justify-content: flex-start;
+  }
+
+  table {
+    min-width: 620px;
   }
 }

@@ -1,3 +1,4 @@
+import * as XLSX from 'xlsx'
 import { useEffect, useMemo, useState } from 'react'
 import type { ChangeEvent, FormEvent } from 'react'
 import './App.css'
@@ -55,6 +56,8 @@ const MONTH_OPTIONS = [
   { value: '12', label: 'Декабрь' },
 ]
 
+const ALL_CATEGORIES_OPTION = 'Все категории'
+
 function getTodayDate() {
   return new Date().toISOString().slice(0, 10)
 }
@@ -65,6 +68,10 @@ function getCurrentMonth() {
 
 function getCurrentYear() {
   return String(new Date().getFullYear())
+}
+
+function getCurrentMonthStartDate() {
+  return `${getCurrentYear()}-${getCurrentMonth()}-01`
 }
 
 function sanitizeAmountInput(value: string) {
@@ -129,6 +136,28 @@ function formatDate(date: string) {
   }).format(new Date(`${date}T00:00:00`))
 }
 
+function formatDateForFile(date: string) {
+  const [year, month, day] = date.split('-')
+
+  return `${day}.${month}.${year}`
+}
+
+function toExcelDate(date: string) {
+  return new Date(`${date}T00:00:00`)
+}
+
+function getDaysInclusive(startDate: string, endDate: string) {
+  if (!startDate || !endDate || startDate > endDate) {
+    return 1
+  }
+
+  const start = toExcelDate(startDate).getTime()
+  const end = toExcelDate(endDate).getTime()
+  const millisecondsInDay = 24 * 60 * 60 * 1000
+
+  return Math.floor((end - start) / millisecondsInDay) + 1
+}
+
 function getBackupFileName() {
   const now = new Date()
   const day = String(now.getDate()).padStart(2, '0')
@@ -180,6 +209,10 @@ function getImportedData(candidate: unknown): ImportedData | null {
   return null
 }
 
+function setColumnWidths(sheet: XLSX.WorkSheet, widths: number[]) {
+  sheet['!cols'] = widths.map((width) => ({ wch: width }))
+}
+
 function App() {
   const [expenses, setExpenses] = useState<Expense[]>(() => {
     const savedExpenses = localStorage.getItem(STORAGE_KEY)
@@ -216,7 +249,7 @@ function App() {
   const [message, setMessage] = useState('')
   const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth())
   const [selectedYear, setSelectedYear] = useState(getCurrentYear())
-  const [selectedCategory, setSelectedCategory] = useState('Все категории')
+  const [selectedCategory, setSelectedCategory] = useState(ALL_CATEGORIES_OPTION)
 
   const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null)
   const [editDate, setEditDate] = useState('')
@@ -227,6 +260,10 @@ function App() {
   const [newCategoryName, setNewCategoryName] = useState('')
   const [editingCategoryName, setEditingCategoryName] = useState<string | null>(null)
   const [editedCategoryName, setEditedCategoryName] = useState('')
+
+  const [reportStartDate, setReportStartDate] = useState(getCurrentMonthStartDate())
+  const [reportEndDate, setReportEndDate] = useState(getTodayDate())
+  const [reportCategory, setReportCategory] = useState(ALL_CATEGORIES_OPTION)
 
   const allCategories = useMemo(() => {
     return [...DEFAULT_CATEGORIES, ...customCategories]
@@ -276,7 +313,8 @@ function App() {
     return expenses.filter((expense) => {
       const isSameMonth = expense.date.startsWith(selectedPeriod)
       const isSameCategory =
-        selectedCategory === 'Все категории' || expense.category === selectedCategory
+        selectedCategory === ALL_CATEGORIES_OPTION ||
+        expense.category === selectedCategory
 
       return isSameMonth && isSameCategory
     })
@@ -292,6 +330,83 @@ function App() {
   const sortedExpenses = useMemo(() => {
     return [...filteredExpenses].sort((a, b) => b.date.localeCompare(a.date))
   }, [filteredExpenses])
+
+  const isReportDateRangeInvalid = reportStartDate > reportEndDate
+
+  const reportExpenses = useMemo(() => {
+    if (isReportDateRangeInvalid) {
+      return []
+    }
+
+    return expenses
+      .filter((expense) => {
+        const isInDateRange =
+          expense.date >= reportStartDate && expense.date <= reportEndDate
+        const isSameCategory =
+          reportCategory === ALL_CATEGORIES_OPTION ||
+          expense.category === reportCategory
+
+        return isInDateRange && isSameCategory
+      })
+      .sort((a, b) => a.date.localeCompare(b.date))
+  }, [expenses, reportStartDate, reportEndDate, reportCategory, isReportDateRangeInvalid])
+
+  const reportTotalAmount = useMemo(() => {
+    return reportExpenses.reduce((sum, expense) => sum + expense.amount, 0)
+  }, [reportExpenses])
+
+  const reportDaysCount = getDaysInclusive(reportStartDate, reportEndDate)
+  const reportAveragePerDay = reportTotalAmount / reportDaysCount
+
+  const reportCategorySummary = useMemo(() => {
+    const summary = new Map<string, { category: string; count: number; amount: number }>()
+
+    reportExpenses.forEach((expense) => {
+      const current = summary.get(expense.category) ?? {
+        category: expense.category,
+        count: 0,
+        amount: 0,
+      }
+
+      summary.set(expense.category, {
+        ...current,
+        count: current.count + 1,
+        amount: current.amount + expense.amount,
+      })
+    })
+
+    return Array.from(summary.values())
+      .map((item) => ({
+        ...item,
+        percent: reportTotalAmount > 0 ? (item.amount / reportTotalAmount) * 100 : 0,
+      }))
+      .sort((a, b) => b.amount - a.amount)
+  }, [reportExpenses, reportTotalAmount])
+
+  const reportDailySummary = useMemo(() => {
+    const summary = new Map<
+      string,
+      { date: string; count: number; amount: number; expenses: Expense[] }
+    >()
+
+    reportExpenses.forEach((expense) => {
+      const current = summary.get(expense.date) ?? {
+        date: expense.date,
+        count: 0,
+        amount: 0,
+        expenses: [],
+      }
+
+      summary.set(expense.date, {
+        ...current,
+        count: current.count + 1,
+        amount: current.amount + expense.amount,
+        expenses: [...current.expenses, expense],
+      })
+    })
+
+    return Array.from(summary.values()).sort((a, b) => a.date.localeCompare(b.date))
+  }, [reportExpenses])
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -465,6 +580,10 @@ function App() {
       setSelectedCategory(newName)
     }
 
+    if (reportCategory === oldCategoryName) {
+      setReportCategory(newName)
+    }
+
     if (editCategory === oldCategoryName) {
       setEditCategory(newName)
     }
@@ -513,7 +632,11 @@ function App() {
     }
 
     if (selectedCategory === categoryName) {
-      setSelectedCategory('Все категории')
+      setSelectedCategory(ALL_CATEGORIES_OPTION)
+    }
+
+    if (reportCategory === categoryName) {
+      setReportCategory(ALL_CATEGORIES_OPTION)
     }
 
     if (editCategory === categoryName) {
@@ -530,7 +653,7 @@ function App() {
   function handleCreateBackup() {
     const backupData: BackupData = {
       appName: 'Expense Tracker',
-      version: '1.1.0',
+      version: '1.2.0',
       createdAt: new Date().toISOString(),
       expenses,
       customCategories,
@@ -578,7 +701,8 @@ function App() {
 
       setExpenses(importedData.expenses)
       setCustomCategories(importedData.customCategories)
-      setSelectedCategory('Все категории')
+      setSelectedCategory(ALL_CATEGORIES_OPTION)
+      setReportCategory(ALL_CATEGORIES_OPTION)
       setCategory(DEFAULT_CATEGORIES[0])
       cancelEditing()
       cancelCategoryEditing()
@@ -588,6 +712,109 @@ function App() {
     } finally {
       input.value = ''
     }
+  }
+
+  function handleDownloadExcel() {
+    if (isReportDateRangeInvalid) {
+      setMessage('Дата начала отчета не может быть позже даты окончания')
+      return
+    }
+
+    if (reportExpenses.length === 0) {
+      setMessage('Нет данных для Excel-отчета')
+      return
+    }
+
+    const workbook = XLSX.utils.book_new()
+
+    const summaryRows = [
+      ['Отчет по расходам'],
+      [],
+      ['Период', `${formatDate(reportStartDate)} — ${formatDate(reportEndDate)}`],
+      ['Категория', reportCategory],
+      ['Дата формирования', new Date()],
+      ['Количество операций', reportExpenses.length],
+      ['Количество дней в периоде', reportDaysCount],
+      ['Общая сумма расходов', reportTotalAmount],
+      ['Средний расход в день', reportAveragePerDay],
+      [],
+      ['Расходы по категориям'],
+      ['Категория', 'Количество операций', 'Сумма', 'Доля от общих расходов (%)'],
+      ...reportCategorySummary.map((item) => [
+        item.category,
+        item.count,
+        item.amount,
+        Number(item.percent.toFixed(2)),
+      ]),
+      [],
+      ['Расходы по дням'],
+      ['Дата', 'Количество операций', 'Сумма'],
+      ...reportDailySummary.map((item) => [
+        toExcelDate(item.date),
+        item.count,
+        item.amount,
+      ]),
+    ]
+
+    const summarySheet = XLSX.utils.aoa_to_sheet(summaryRows)
+    setColumnWidths(summarySheet, [28, 24, 18, 28])
+    summarySheet['!autofilter'] = { ref: 'A12:D12' }
+
+    const detailRows = [
+      ['№', 'Дата', 'Категория', 'Описание', 'Сумма'],
+      ...reportExpenses.map((expense, index) => [
+        index + 1,
+        toExcelDate(expense.date),
+        expense.category,
+        expense.description,
+        expense.amount,
+      ]),
+      [],
+      ['', '', '', 'Итого', reportTotalAmount],
+    ]
+
+    const detailSheet = XLSX.utils.aoa_to_sheet(detailRows)
+    setColumnWidths(detailSheet, [8, 16, 24, 42, 18])
+    detailSheet['!autofilter'] = { ref: 'A1:E1' }
+
+    const dailyRows: Array<Array<string | number | Date>> = [
+      ['Дата', 'Описание', 'Категория', 'Сумма'],
+    ]
+
+    reportDailySummary.forEach((day) => {
+      dailyRows.push([toExcelDate(day.date), 'Итого за день', '', day.amount])
+
+      day.expenses.forEach((expense) => {
+        dailyRows.push([
+          toExcelDate(expense.date),
+          expense.description,
+          expense.category,
+          expense.amount,
+        ])
+      })
+
+      dailyRows.push([])
+    })
+
+    dailyRows.push(['', '', 'Общая сумма периода', reportTotalAmount])
+
+    const dailySheet = XLSX.utils.aoa_to_sheet(dailyRows)
+    setColumnWidths(dailySheet, [16, 42, 24, 18])
+    dailySheet['!autofilter'] = { ref: 'A1:D1' }
+
+    XLSX.utils.book_append_sheet(workbook, summarySheet, 'Сводка')
+    XLSX.utils.book_append_sheet(workbook, detailSheet, 'Детализация')
+    XLSX.utils.book_append_sheet(workbook, dailySheet, 'По дням')
+
+    XLSX.writeFile(
+      workbook,
+      `Отчет по расходам_${formatDateForFile(reportStartDate)}-${formatDateForFile(
+        reportEndDate,
+      )}.xlsx`,
+      { cellDates: true },
+    )
+
+    setMessage('Excel-отчет скачан')
   }
 
   return (
@@ -647,7 +874,7 @@ function App() {
               value={selectedCategory}
               onChange={(event) => setSelectedCategory(event.target.value)}
             >
-              <option value="Все категории">Все категории</option>
+              <option value={ALL_CATEGORIES_OPTION}>{ALL_CATEGORIES_OPTION}</option>
               {allCategories.map((currentCategory) => (
                 <option key={currentCategory} value={currentCategory}>
                   {currentCategory}
@@ -862,10 +1089,180 @@ function App() {
 
         <section className="panel">
           <div className="panel__header">
+            <h2>Отчет за период</h2>
+            <p>
+              Выберите даты и категорию, чтобы получить сводку и скачать Excel-отчет.
+            </p>
+          </div>
+
+          <div className="report-filters">
+            <label>
+              <span>Дата начала</span>
+              <input
+                type="date"
+                value={reportStartDate}
+                onChange={(event) => {
+                  setReportStartDate(event.target.value)
+                  event.currentTarget.blur()
+                }}
+              />
+            </label>
+
+            <label>
+              <span>Дата окончания</span>
+              <input
+                type="date"
+                value={reportEndDate}
+                onChange={(event) => {
+                  setReportEndDate(event.target.value)
+                  event.currentTarget.blur()
+                }}
+              />
+            </label>
+
+            <label>
+              <span>Категория</span>
+              <select
+                value={reportCategory}
+                onChange={(event) => setReportCategory(event.target.value)}
+              >
+                <option value={ALL_CATEGORIES_OPTION}>{ALL_CATEGORIES_OPTION}</option>
+                {allCategories.map((currentCategory) => (
+                  <option key={currentCategory} value={currentCategory}>
+                    {currentCategory}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          {isReportDateRangeInvalid ? (
+            <div className="empty-state">
+              Дата начала отчета не может быть позже даты окончания.
+            </div>
+          ) : (
+            <>
+              <section className="report-summary">
+                <article className="summary__card">
+                  <span>Сумма отчета</span>
+                  <strong>{formatCurrency(reportTotalAmount)}</strong>
+                </article>
+
+                <article className="summary__card">
+                  <span>Операций</span>
+                  <strong>{reportExpenses.length}</strong>
+                </article>
+
+                <article className="summary__card">
+                  <span>Средний расход в день</span>
+                  <strong>{formatCurrency(reportAveragePerDay)}</strong>
+                </article>
+              </section>
+
+              <button className="button" type="button" onClick={handleDownloadExcel}>
+                Скачать Excel-отчет
+              </button>
+
+              <div className="report-block">
+                <h3>Расходы по категориям</h3>
+
+                {reportCategorySummary.length === 0 ? (
+                  <div className="empty-state">Нет данных за выбранный период.</div>
+                ) : (
+                  <div className="table-wrapper">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Категория</th>
+                          <th>Операций</th>
+                          <th>Сумма</th>
+                          <th>Доля</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {reportCategorySummary.map((item) => (
+                          <tr key={item.category}>
+                            <td>{item.category}</td>
+                            <td>{item.count}</td>
+                            <td>{formatCurrency(item.amount)}</td>
+                            <td>{item.percent.toFixed(1)}%</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+
+              <div className="report-block">
+                <h3>Расходы по датам</h3>
+
+                {reportDailySummary.length === 0 ? (
+                  <div className="empty-state">Нет данных за выбранный период.</div>
+                ) : (
+                  <div className="table-wrapper">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Дата</th>
+                          <th>Операций</th>
+                          <th>Сумма</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {reportDailySummary.map((item) => (
+                          <tr key={item.date}>
+                            <td>{formatDate(item.date)}</td>
+                            <td>{item.count}</td>
+                            <td>{formatCurrency(item.amount)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+
+              <div className="report-block">
+                <h3>Детализация</h3>
+
+                {reportExpenses.length === 0 ? (
+                  <div className="empty-state">Нет расходов для детализации.</div>
+                ) : (
+                  <div className="table-wrapper">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Дата</th>
+                          <th>Категория</th>
+                          <th>Описание</th>
+                          <th>Сумма</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {reportExpenses.map((expense) => (
+                          <tr key={expense.id}>
+                            <td>{formatDate(expense.date)}</td>
+                            <td>{expense.category}</td>
+                            <td>{expense.description}</td>
+                            <td>{formatCurrency(expense.amount)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </section>
+
+        <section className="panel">
+          <div className="panel__header">
             <h2>Категории</h2>
             <p>
               Добавляйте собственные категории. Они будут доступны в расходах,
-              фильтрах и резервных копиях.
+              фильтрах, отчетах и резервных копиях.
             </p>
           </div>
 
