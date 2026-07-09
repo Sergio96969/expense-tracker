@@ -1,6 +1,6 @@
 import * as XLSX from 'xlsx'
 import { useEffect, useMemo, useState } from 'react'
-import type { ChangeEvent, FormEvent } from 'react'
+import type { ChangeEvent, FormEvent, ReactNode } from 'react'
 import type { LucideIcon } from 'lucide-react'
 import {
   BarChart3,
@@ -312,6 +312,26 @@ function getImportedData(candidate: unknown): ImportedData | null {
 
 function setColumnWidths(sheet: XLSX.WorkSheet, widths: number[]) {
   sheet['!cols'] = widths.map((width) => ({ wch: width }))
+}
+
+
+
+type FieldCardProps = {
+  label: string
+  Icon: LucideIcon
+  children: ReactNode
+}
+
+function FieldCard({ label, Icon, children }: FieldCardProps) {
+  return (
+    <label className="field-card">
+      <span className="field-card__icon">
+        <Icon size={19} strokeWidth={2.1} />
+      </span>
+      <span className="field-card__label">{label}</span>
+      <span className="field-card__control">{children}</span>
+    </label>
+  )
 }
 
 function App() {
@@ -1099,8 +1119,7 @@ function App() {
             </section>
 
             <section className="filters">
-              <label>
-                <span>Месяц</span>
+              <FieldCard label="Месяц" Icon={CalendarDays}>
                 <select
                   value={selectedMonth}
                   onChange={(event) => setSelectedMonth(event.target.value)}
@@ -1111,10 +1130,9 @@ function App() {
                     </option>
                   ))}
                 </select>
-              </label>
+              </FieldCard>
 
-              <label>
-                <span>Год</span>
+              <FieldCard label="Год" Icon={CalendarDays}>
                 <select
                   value={selectedYear}
                   onChange={(event) => setSelectedYear(event.target.value)}
@@ -1125,10 +1143,9 @@ function App() {
                     </option>
                   ))}
                 </select>
-              </label>
+              </FieldCard>
 
-              <label>
-                <span>Категория</span>
+              <FieldCard label="Категория" Icon={Tags}>
                 <select
                   value={selectedCategory}
                   onChange={(event) => setSelectedCategory(event.target.value)}
@@ -1140,7 +1157,7 @@ function App() {
                     </option>
                   ))}
                 </select>
-              </label>
+              </FieldCard>
             </section>
 
             <section className="summary">
@@ -1246,8 +1263,7 @@ function App() {
               </div>
 
               <form className="expense-form" onSubmit={handleSubmit}>
-                <label>
-                  <span>Дата</span>
+                <FieldCard label="Дата" Icon={CalendarDays}>
                   <input
                     type="date"
                     value={date}
@@ -1256,10 +1272,9 @@ function App() {
                       event.currentTarget.blur()
                     }}
                   />
-                </label>
+                </FieldCard>
 
-                <label>
-                  <span>Категория</span>
+                <FieldCard label="Категория" Icon={Tags}>
                   <select
                     value={category}
                     onChange={(event) => setCategory(event.target.value)}
@@ -1270,20 +1285,18 @@ function App() {
                       </option>
                     ))}
                   </select>
-                </label>
+                </FieldCard>
 
-                <label>
-                  <span>Описание</span>
+                <FieldCard label="Описание" Icon={Pencil}>
                   <input
                     type="text"
                     placeholder="Например: продукты в магазине"
                     value={description}
                     onChange={(event) => setDescription(event.target.value)}
                   />
-                </label>
+                </FieldCard>
 
-                <label>
-                  <span>Сумма</span>
+                <FieldCard label="Сумма" Icon={CircleDollarSign}>
                   <input
                     type="text"
                     inputMode="decimal"
@@ -1293,7 +1306,7 @@ function App() {
                       setAmount(sanitizeAmountInput(event.target.value))
                     }
                   />
-                </label>
+                </FieldCard>
 
                 <button className="button" type="submit">
                   <Plus size={18} />
@@ -1333,8 +1346,7 @@ function App() {
                             className="expense-edit-form"
                             onSubmit={(event) => handleEditSubmit(event, expense.id)}
                           >
-                            <label>
-                              <span>Дата</span>
+                            <FieldCard label="Дата" Icon={CalendarDays}>
                               <input
                                 type="date"
                                 value={editDate}
@@ -1343,10 +1355,9 @@ function App() {
                                   event.currentTarget.blur()
                                 }}
                               />
-                            </label>
+                            </FieldCard>
 
-                            <label>
-                              <span>Категория</span>
+                            <FieldCard label="Категория" Icon={Tags}>
                               <select
                                 value={editCategory}
                                 onChange={(event) =>
@@ -1359,10 +1370,9 @@ function App() {
                                   </option>
                                 ))}
                               </select>
-                            </label>
+                            </FieldCard>
 
-                            <label>
-                              <span>Описание</span>
+                            <FieldCard label="Описание" Icon={Pencil}>
                               <input
                                 type="text"
                                 value={editDescription}
@@ -1370,10 +1380,9 @@ function App() {
                                   setEditDescription(event.target.value)
                                 }
                               />
-                            </label>
+                            </FieldCard>
 
-                            <label>
-                              <span>Сумма</span>
+                            <FieldCard label="Сумма" Icon={CircleDollarSign}>
                               <input
                                 type="text"
                                 inputMode="decimal"
@@ -1382,7 +1391,7 @@ function App() {
                                   setEditAmount(sanitizeAmountInput(event.target.value))
                                 }
                               />
-                            </label>
+                            </FieldCard>
 
                             <div className="expense-edit-form__actions">
                               <button className="button" type="submit">
@@ -1468,8 +1477,7 @@ function App() {
             </div>
 
             <div className="report-filters">
-              <label>
-                <span>Дата начала</span>
+              <FieldCard label="Дата начала" Icon={CalendarDays}>
                 <input
                   type="date"
                   value={reportStartDate}
@@ -1478,10 +1486,9 @@ function App() {
                     event.currentTarget.blur()
                   }}
                 />
-              </label>
+              </FieldCard>
 
-              <label>
-                <span>Дата окончания</span>
+              <FieldCard label="Дата окончания" Icon={CalendarDays}>
                 <input
                   type="date"
                   value={reportEndDate}
@@ -1490,10 +1497,9 @@ function App() {
                     event.currentTarget.blur()
                   }}
                 />
-              </label>
+              </FieldCard>
 
-              <label>
-                <span>Категория</span>
+              <FieldCard label="Категория" Icon={Tags}>
                 <select
                   value={reportCategory}
                   onChange={(event) => setReportCategory(event.target.value)}
@@ -1507,7 +1513,7 @@ function App() {
                     </option>
                   ))}
                 </select>
-              </label>
+              </FieldCard>
             </div>
 
             {isReportDateRangeInvalid ? (
@@ -1676,15 +1682,14 @@ function App() {
             </div>
 
             <form className="category-form" onSubmit={handleAddCategory}>
-              <label>
-                <span>Новая категория</span>
+              <FieldCard label="Новая категория" Icon={Tags}>
                 <input
                   type="text"
                   placeholder="Например: Автомобиль"
                   value={newCategoryName}
                   onChange={(event) => setNewCategoryName(event.target.value)}
                 />
-              </label>
+              </FieldCard>
 
               <button className="button" type="submit">
                 <Plus size={18} />
@@ -1708,8 +1713,7 @@ function App() {
                         className="category-edit-form"
                         onSubmit={handleRenameCategory}
                       >
-                        <label>
-                          <span>Название категории</span>
+                        <FieldCard label="Название категории" Icon={Tags}>
                           <input
                             type="text"
                             value={editedCategoryName}
@@ -1717,7 +1721,7 @@ function App() {
                               setEditedCategoryName(event.target.value)
                             }
                           />
-                        </label>
+                        </FieldCard>
 
                         <div className="category-card__actions">
                           <button className="edit-button" type="submit">
@@ -1859,8 +1863,7 @@ function App() {
             </div>
 
             <form className="quick-add-form" onSubmit={handleQuickAddSubmit}>
-              <label>
-                <span>Дата</span>
+              <FieldCard label="Дата" Icon={CalendarDays}>
                 <input
                   type="date"
                   value={date}
@@ -1869,10 +1872,9 @@ function App() {
                     event.currentTarget.blur()
                   }}
                 />
-              </label>
+              </FieldCard>
 
-              <label>
-                <span>Категория</span>
+              <FieldCard label="Категория" Icon={Tags}>
                 <select
                   value={category}
                   onChange={(event) => setCategory(event.target.value)}
@@ -1883,20 +1885,18 @@ function App() {
                     </option>
                   ))}
                 </select>
-              </label>
+              </FieldCard>
 
-              <label>
-                <span>Описание</span>
+              <FieldCard label="Описание" Icon={Pencil}>
                 <input
                   type="text"
                   placeholder="Например: кофе"
                   value={description}
                   onChange={(event) => setDescription(event.target.value)}
                 />
-              </label>
+              </FieldCard>
 
-              <label>
-                <span>Сумма</span>
+              <FieldCard label="Сумма" Icon={CircleDollarSign}>
                 <input
                   type="text"
                   inputMode="decimal"
@@ -1906,7 +1906,7 @@ function App() {
                     setAmount(sanitizeAmountInput(event.target.value))
                   }
                 />
-              </label>
+              </FieldCard>
 
               <button className="button" type="submit">
                 <Plus size={18} />

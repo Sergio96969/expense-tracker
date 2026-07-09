@@ -1220,3 +1220,65 @@ input::placeholder {
     font-weight: 540;
   }
 }
+/* Date field affordance */
+
+.field-card__control {
+  position: relative;
+}
+
+.field-card:has(input[type="date"]) .field-card__control::after {
+  content: "";
+  position: absolute;
+  right: 2px;
+  top: 50%;
+  width: 9px;
+  height: 9px;
+  border-right: 2px solid #98a2b3;
+  border-bottom: 2px solid #98a2b3;
+  transform: translateY(-65%) rotate(45deg);
+  pointer-events: none;
+}
+
+.field-card:has(input[type="date"]):hover .field-card__control::after,
+.field-card:has(input[type="date"]):focus-within .field-card__control::after {
+  border-color: #4f46e5;
+}
+
+.field-card:has(input[type="date"]) {
+  cursor: pointer;
+}
+
+.field-card:has(input[type="date"]) input[type="date"] {
+  cursor: pointer;
+}
+/* Date field affordance */
+
+.field-card__control {
+  position: relative;
+}
+
+.field-card:has(input[type="date"]) .field-card__control::after {
+  content: "";
+  position: absolute;
+  right: 2px;
+  top: 50%;
+  width: 9px;
+  height: 9px;
+  border-right: 2px solid #98a2b3;
+  border-bottom: 2px solid #98a2b3;
+  transform: translateY(-65%) rotate(45deg);
+  pointer-events: none;
+}
+
+.field-card:has(input[type="date"]):hover .field-card__control::after,
+.field-card:has(input[type="date"]):focus-within .field-card__control::after {
+  border-color: #4f46e5;
+}
+
+.field-card:has(input[type="date"]) {
+  cursor: pointer;
+}
+
+.field-card:has(input[type="date"]) input[type="date"] {
+  cursor: pointer;
+}
