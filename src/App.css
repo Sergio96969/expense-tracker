@@ -980,3 +980,243 @@ tr:last-child td {
     padding: 18px;
   }
 }
+/* Refined designer fields */
+
+.filters,
+.report-filters,
+.expense-form,
+.expense-edit-form,
+.category-form,
+.category-edit-form,
+.quick-add-form {
+  gap: 14px;
+}
+
+.filters label,
+.report-filters label,
+.expense-form label,
+.expense-edit-form label,
+.category-form label,
+.category-edit-form label,
+.quick-add-form label {
+  position: relative;
+  display: grid;
+  gap: 6px;
+  min-height: 82px;
+  padding: 16px 16px 14px 58px;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.055);
+  backdrop-filter: blur(14px);
+  transition:
+    transform 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    background 0.18s ease;
+}
+
+.filters label:hover,
+.report-filters label:hover,
+.expense-form label:hover,
+.expense-edit-form label:hover,
+.category-form label:hover,
+.category-edit-form label:hover,
+.quick-add-form label:hover {
+  transform: translateY(-1px);
+  border-color: rgba(99, 102, 241, 0.32);
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 14px 36px rgba(15, 23, 42, 0.08);
+}
+
+.filters label:focus-within,
+.report-filters label:focus-within,
+.expense-form label:focus-within,
+.expense-edit-form label:focus-within,
+.category-form label:focus-within,
+.category-edit-form label:focus-within,
+.quick-add-form label:focus-within {
+  border-color: rgba(99, 102, 241, 0.65);
+  box-shadow:
+    0 0 0 4px rgba(99, 102, 241, 0.09),
+    0 16px 38px rgba(15, 23, 42, 0.09);
+}
+
+.filters label::before,
+.report-filters label::before,
+.expense-form label::before,
+.expense-edit-form label::before,
+.category-form label::before,
+.category-edit-form label::before,
+.quick-add-form label::before {
+  content: "";
+  position: absolute;
+  left: 16px;
+  top: 19px;
+  width: 30px;
+  height: 30px;
+  border-radius: 12px;
+  background: linear-gradient(145deg, #eef2ff, #ffffff);
+  box-shadow: inset 0 0 0 1px rgba(99, 102, 241, 0.14);
+}
+
+.filters label::after,
+.report-filters label::after,
+.expense-form label::after,
+.expense-edit-form label::after,
+.category-form label::after,
+.category-edit-form label::after,
+.quick-add-form label::after {
+  content: "";
+  position: absolute;
+  left: 22px;
+  top: 25px;
+  width: 18px;
+  height: 18px;
+  background: #4f46e5;
+  mask: var(--field-icon) center / contain no-repeat;
+  -webkit-mask: var(--field-icon) center / contain no-repeat;
+}
+
+.filters label span,
+.report-filters label span,
+.expense-form label span,
+.expense-edit-form label span,
+.category-form label span,
+.category-edit-form label span,
+.quick-add-form label span {
+  color: #667085;
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+  text-transform: none;
+}
+
+.filters input,
+.filters select,
+.report-filters input,
+.report-filters select,
+.expense-form input,
+.expense-form select,
+.expense-edit-form input,
+.expense-edit-form select,
+.category-form input,
+.category-edit-form input,
+.quick-add-form input,
+.quick-add-form select {
+  min-height: 30px;
+  border: 0;
+  border-radius: 0;
+  padding: 0 26px 0 0;
+  background: transparent;
+  color: #101828;
+  font-size: 17px;
+  font-weight: 560;
+  letter-spacing: -0.015em;
+  box-shadow: none;
+}
+
+.filters input:focus,
+.filters select:focus,
+.report-filters input:focus,
+.report-filters select:focus,
+.expense-form input:focus,
+.expense-form select:focus,
+.expense-edit-form input:focus,
+.expense-edit-form select:focus,
+.category-form input:focus,
+.category-edit-form input:focus,
+.quick-add-form input:focus,
+.quick-add-form select:focus {
+  background: transparent;
+  box-shadow: none;
+}
+
+select {
+  appearance: none;
+}
+
+label:has(select) {
+  background-image:
+    linear-gradient(45deg, transparent 50%, #98a2b3 50%),
+    linear-gradient(135deg, #98a2b3 50%, transparent 50%);
+  background-position:
+    calc(100% - 21px) 47px,
+    calc(100% - 15px) 47px;
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+}
+
+input::placeholder {
+  color: #98a2b3;
+  font-weight: 450;
+}
+
+/* SVG field icons */
+.filters label:nth-child(1),
+.expense-form label:nth-child(1),
+.expense-edit-form label:nth-child(1),
+.quick-add-form label:nth-child(1),
+.report-filters label:nth-child(1),
+.report-filters label:nth-child(2) {
+  --field-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8 2v4M16 2v4M3 10h18'/%3E%3Crect x='3' y='4' width='18' height='18' rx='2'/%3E%3C/svg%3E");
+}
+
+.filters label:nth-child(2) {
+  --field-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 3h18v18H3z'/%3E%3Cpath d='M16 3v18M8 3v18M3 9h18M3 15h18'/%3E%3C/svg%3E");
+}
+
+.filters label:nth-child(3),
+.expense-form label:nth-child(2),
+.expense-edit-form label:nth-child(2),
+.quick-add-form label:nth-child(2),
+.report-filters label:nth-child(3) {
+  --field-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20.59 13.41 13.42 20.58a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82Z'/%3E%3Ccircle cx='7' cy='7' r='1'/%3E%3C/svg%3E");
+}
+
+.expense-form label:nth-child(3),
+.expense-edit-form label:nth-child(3),
+.quick-add-form label:nth-child(3) {
+  --field-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 20h9'/%3E%3Cpath d='M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z'/%3E%3C/svg%3E");
+}
+
+.expense-form label:nth-child(4),
+.expense-edit-form label:nth-child(4),
+.quick-add-form label:nth-child(4) {
+  --field-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='2' y='5' width='20' height='14' rx='2'/%3E%3Cpath d='M2 10h20'/%3E%3C/svg%3E");
+}
+
+.category-form label:nth-child(1),
+.category-edit-form label:nth-child(1) {
+  --field-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 9V5a1 1 0 0 1 1-1h4'/%3E%3Cpath d='M20 15v4a1 1 0 0 1-1 1h-4'/%3E%3Cpath d='M9 4l11 11-5 5L4 9Z'/%3E%3C/svg%3E");
+}
+
+@media (max-width: 720px) {
+  .filters label,
+  .report-filters label,
+  .expense-form label,
+  .expense-edit-form label,
+  .category-form label,
+  .category-edit-form label,
+  .quick-add-form label {
+    min-height: 76px;
+    padding-left: 56px;
+    border-radius: 20px;
+  }
+
+  .filters input,
+  .filters select,
+  .report-filters input,
+  .report-filters select,
+  .expense-form input,
+  .expense-form select,
+  .expense-edit-form input,
+  .expense-edit-form select,
+  .category-form input,
+  .category-edit-form input,
+  .quick-add-form input,
+  .quick-add-form select {
+    font-size: 16px;
+    font-weight: 540;
+  }
+}
