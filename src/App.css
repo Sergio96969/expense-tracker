@@ -90,6 +90,46 @@ h1 {
   line-height: 1;
 }
 
+.filters {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+  padding: 20px;
+  border-radius: 24px;
+  background: #ffffff;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
+}
+
+.filters label {
+  display: grid;
+  gap: 8px;
+}
+
+.filters label span {
+  color: #374151;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.filters input,
+.filters select {
+  width: 100%;
+  min-height: 48px;
+  border: 1px solid #d1d5db;
+  border-radius: 14px;
+  padding: 0 14px;
+  background: #ffffff;
+  color: #111827;
+  outline: none;
+}
+
+.filters input:focus,
+.filters select:focus {
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.12);
+}
+
 .summary {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -248,6 +288,11 @@ h1 {
 @media (max-width: 720px) {
   .app {
     padding: 20px 12px 32px;
+  }
+
+  .filters {
+    grid-template-columns: 1fr;
+    border-radius: 20px;
   }
 
   .summary {

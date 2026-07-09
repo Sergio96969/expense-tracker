@@ -1,4 +1,5 @@
-import { FormEvent, useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import type { FormEvent } from 'react'
 import './App.css'
 
 type Expense = {
@@ -24,8 +25,31 @@ const DEFAULT_CATEGORIES = [
   'Другое',
 ]
 
+const MONTH_OPTIONS = [
+  { value: '01', label: 'Январь' },
+  { value: '02', label: 'Февраль' },
+  { value: '03', label: 'Март' },
+  { value: '04', label: 'Апрель' },
+  { value: '05', label: 'Май' },
+  { value: '06', label: 'Июнь' },
+  { value: '07', label: 'Июль' },
+  { value: '08', label: 'Август' },
+  { value: '09', label: 'Сентябрь' },
+  { value: '10', label: 'Октябрь' },
+  { value: '11', label: 'Ноябрь' },
+  { value: '12', label: 'Декабрь' },
+]
+
 function getTodayDate() {
   return new Date().toISOString().slice(0, 10)
+}
+
+function getCurrentMonth() {
+  return new Date().toISOString().slice(5, 7)
+}
+
+function getCurrentYear() {
+  return String(new Date().getFullYear())
 }
 
 function formatCurrency(value: number) {
@@ -56,6 +80,9 @@ function App() {
   const [description, setDescription] = useState('')
   const [amount, setAmount] = useState('')
   const [message, setMessage] = useState('')
+  const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth())
+  const [selectedYear, setSelectedYear] = useState(getCurrentYear())
+  const [selectedCategory, setSelectedCategory] = useState('Все категории')
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(expenses))
@@ -73,15 +100,46 @@ function App() {
     return () => window.clearTimeout(timerId)
   }, [message])
 
-  const totalAmount = useMemo(() => {
-    return expenses.reduce((sum, expense) => sum + expense.amount, 0)
+  const yearOptions = useMemo(() => {
+    const currentYear = new Date().getFullYear()
+    const yearsFromExpenses = expenses.map((expense) =>
+      Number(expense.date.slice(0, 4)),
+    )
+
+    const minYear = Math.min(currentYear - 2, ...yearsFromExpenses)
+    const maxYear = Math.max(currentYear + 2, ...yearsFromExpenses)
+
+    const years: string[] = []
+
+    for (let year = maxYear; year >= minYear; year -= 1) {
+      years.push(String(year))
+    }
+
+    return years
   }, [expenses])
 
-  const averageAmount = expenses.length > 0 ? totalAmount / expenses.length : 0
+  const selectedPeriod = `${selectedYear}-${selectedMonth}`
+
+  const filteredExpenses = useMemo(() => {
+    return expenses.filter((expense) => {
+      const isSameMonth = expense.date.startsWith(selectedPeriod)
+      const isSameCategory =
+        selectedCategory === 'Все категории' || expense.category === selectedCategory
+
+      return isSameMonth && isSameCategory
+    })
+  }, [expenses, selectedPeriod, selectedCategory])
+
+  const totalAmount = useMemo(() => {
+    return filteredExpenses.reduce((sum, expense) => sum + expense.amount, 0)
+  }, [filteredExpenses])
+
+  const averageAmount =
+    filteredExpenses.length > 0 ? totalAmount / filteredExpenses.length : 0
 
   const sortedExpenses = useMemo(() => {
-    return [...expenses].sort((a, b) => b.date.localeCompare(a.date))
-  }, [expenses])
+    return [...filteredExpenses].sort((a, b) => b.date.localeCompare(a.date))
+  }, [filteredExpenses])
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -144,15 +202,60 @@ function App() {
           </div>
         )}
 
+        <section className="filters">
+          <label>
+            <span>Месяц</span>
+            <select
+              value={selectedMonth}
+              onChange={(event) => setSelectedMonth(event.target.value)}
+            >
+              {MONTH_OPTIONS.map((month) => (
+                <option key={month.value} value={month.value}>
+                  {month.label}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label>
+            <span>Год</span>
+            <select
+              value={selectedYear}
+              onChange={(event) => setSelectedYear(event.target.value)}
+            >
+              {yearOptions.map((year) => (
+                <option key={year} value={year}>
+                  {year}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label>
+            <span>Категория</span>
+            <select
+              value={selectedCategory}
+              onChange={(event) => setSelectedCategory(event.target.value)}
+            >
+              <option value="Все категории">Все категории</option>
+              {DEFAULT_CATEGORIES.map((currentCategory) => (
+                <option key={currentCategory} value={currentCategory}>
+                  {currentCategory}
+                </option>
+              ))}
+            </select>
+          </label>
+        </section>
+
         <section className="summary">
           <article className="summary__card">
-            <span>Расходы всего</span>
+            <span>Расходы за период</span>
             <strong>{formatCurrency(totalAmount)}</strong>
           </article>
 
           <article className="summary__card">
             <span>Количество записей</span>
-            <strong>{expenses.length}</strong>
+            <strong>{filteredExpenses.length}</strong>
           </article>
 
           <article className="summary__card">
@@ -171,13 +274,13 @@ function App() {
             <label>
               <span>Дата</span>
               <input
-  type="date"
-  value={date}
-  onChange={(event) => {
-    setDate(event.target.value)
-    event.currentTarget.blur()
-  }}
-/>
+                type="date"
+                value={date}
+                onChange={(event) => {
+                  setDate(event.target.value)
+                  event.currentTarget.blur()
+                }}
+              />
             </label>
 
             <label>
@@ -207,16 +310,17 @@ function App() {
             <label>
               <span>Сумма</span>
               <input
-  type="text"
-  inputMode="decimal"
-  placeholder="0"
-  value={amount}
-  onChange={(event) => {
-    const onlyNumbers = event.target.value.replace(/[^\d.,]/g, '')
-    const normalizedValue = onlyNumbers.replace(',', '.')
-    setAmount(normalizedValue)
-  }}
-/>            </label>
+                type="text"
+                inputMode="decimal"
+                placeholder="0"
+                value={amount}
+                onChange={(event) => {
+                  const onlyNumbers = event.target.value.replace(/[^\d.,]/g, '')
+                  const normalizedValue = onlyNumbers.replace(',', '.')
+                  setAmount(normalizedValue)
+                }}
+              />
+            </label>
 
             <button className="button" type="submit">
               Добавить расход
@@ -232,7 +336,7 @@ function App() {
 
           {sortedExpenses.length === 0 ? (
             <div className="empty-state">
-              Пока расходов нет. Добавьте первую запись.
+              За выбранный период расходов нет.
             </div>
           ) : (
             <div className="expense-list">
