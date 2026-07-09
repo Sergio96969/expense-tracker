@@ -24,6 +24,8 @@ type ImportedData = {
   customCategories: string[]
 }
 
+type AppSection = 'dashboard' | 'expenses' | 'reports' | 'categories' | 'settings'
+
 const STORAGE_KEY = 'expense-tracker-expenses'
 const CATEGORY_STORAGE_KEY = 'expense-tracker-custom-categories'
 const FALLBACK_CATEGORY = 'Другое'
@@ -54,6 +56,14 @@ const MONTH_OPTIONS = [
   { value: '10', label: 'Октябрь' },
   { value: '11', label: 'Ноябрь' },
   { value: '12', label: 'Декабрь' },
+]
+
+const NAV_ITEMS: Array<{ id: AppSection; label: string }> = [
+  { id: 'dashboard', label: 'Главная' },
+  { id: 'expenses', label: 'Расходы' },
+  { id: 'reports', label: 'Отчеты' },
+  { id: 'categories', label: 'Категории' },
+  { id: 'settings', label: 'Настройки' },
 ]
 
 const ALL_CATEGORIES_OPTION = 'Все категории'
@@ -214,6 +224,8 @@ function setColumnWidths(sheet: XLSX.WorkSheet, widths: number[]) {
 }
 
 function App() {
+  const [activeSection, setActiveSection] = useState<AppSection>('dashboard')
+
   const [expenses, setExpenses] = useState<Expense[]>(() => {
     const savedExpenses = localStorage.getItem(STORAGE_KEY)
 
@@ -330,6 +342,8 @@ function App() {
   const sortedExpenses = useMemo(() => {
     return [...filteredExpenses].sort((a, b) => b.date.localeCompare(a.date))
   }, [filteredExpenses])
+
+  const latestExpenses = sortedExpenses.slice(0, 3)
 
   const isReportDateRangeInvalid = reportStartDate > reportEndDate
 
@@ -653,7 +667,7 @@ function App() {
   function handleCreateBackup() {
     const backupData: BackupData = {
       appName: 'Expense Tracker',
-      version: '1.2.0',
+      version: '1.3.0',
       createdAt: new Date().toISOString(),
       expenses,
       customCategories,
@@ -821,14 +835,27 @@ function App() {
     <main className="app">
       <section className="app__container">
         <header className="app__header">
-          <div>
-            <p className="app__eyebrow">Личный финансовый помощник</p>
-            <h1>Учет расходов</h1>
-            <p className="app__description">
-              Простое приложение для фиксации расходов, анализа трат и формирования отчетов.
-            </p>
-          </div>
+          <p className="app__eyebrow">Личный финансовый помощник</p>
+          <h1>Учет расходов</h1>
+          <p className="app__description">
+            Простое приложение для фиксации расходов, анализа трат и формирования отчетов.
+          </p>
         </header>
+
+        <nav className="app-nav">
+          {NAV_ITEMS.map((item) => (
+            <button
+              className={`app-nav__button ${
+                activeSection === item.id ? 'app-nav__button--active' : ''
+              }`}
+              key={item.id}
+              type="button"
+              onClick={() => setActiveSection(item.id)}
+            >
+              {item.label}
+            </button>
+          ))}
+        </nav>
 
         {message && (
           <div className="toast">
@@ -839,209 +866,552 @@ function App() {
           </div>
         )}
 
-        <section className="filters">
-          <label>
-            <span>Месяц</span>
-            <select
-              value={selectedMonth}
-              onChange={(event) => setSelectedMonth(event.target.value)}
-            >
-              {MONTH_OPTIONS.map((month) => (
-                <option key={month.value} value={month.value}>
-                  {month.label}
-                </option>
-              ))}
-            </select>
-          </label>
+        {activeSection === 'dashboard' && (
+          <>
+            <section className="section-heading">
+              <h2>Главная</h2>
+              <p>Краткая сводка по выбранному месяцу.</p>
+            </section>
 
-          <label>
-            <span>Год</span>
-            <select
-              value={selectedYear}
-              onChange={(event) => setSelectedYear(event.target.value)}
-            >
-              {yearOptions.map((year) => (
-                <option key={year} value={year}>
-                  {year}
-                </option>
-              ))}
-            </select>
-          </label>
+            <section className="filters">
+              <label>
+                <span>Месяц</span>
+                <select
+                  value={selectedMonth}
+                  onChange={(event) => setSelectedMonth(event.target.value)}
+                >
+                  {MONTH_OPTIONS.map((month) => (
+                    <option key={month.value} value={month.value}>
+                      {month.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
 
-          <label>
-            <span>Категория</span>
-            <select
-              value={selectedCategory}
-              onChange={(event) => setSelectedCategory(event.target.value)}
-            >
-              <option value={ALL_CATEGORIES_OPTION}>{ALL_CATEGORIES_OPTION}</option>
-              {allCategories.map((currentCategory) => (
-                <option key={currentCategory} value={currentCategory}>
-                  {currentCategory}
-                </option>
-              ))}
-            </select>
-          </label>
-        </section>
+              <label>
+                <span>Год</span>
+                <select
+                  value={selectedYear}
+                  onChange={(event) => setSelectedYear(event.target.value)}
+                >
+                  {yearOptions.map((year) => (
+                    <option key={year} value={year}>
+                      {year}
+                    </option>
+                  ))}
+                </select>
+              </label>
 
-        <section className="summary">
-          <article className="summary__card">
-            <span>Расходы за период</span>
-            <strong>{formatCurrency(totalAmount)}</strong>
-          </article>
+              <label>
+                <span>Категория</span>
+                <select
+                  value={selectedCategory}
+                  onChange={(event) => setSelectedCategory(event.target.value)}
+                >
+                  <option value={ALL_CATEGORIES_OPTION}>{ALL_CATEGORIES_OPTION}</option>
+                  {allCategories.map((currentCategory) => (
+                    <option key={currentCategory} value={currentCategory}>
+                      {currentCategory}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </section>
 
-          <article className="summary__card">
-            <span>Количество записей</span>
-            <strong>{filteredExpenses.length}</strong>
-          </article>
+            <section className="summary">
+              <article className="summary__card">
+                <span>Расходы за период</span>
+                <strong>{formatCurrency(totalAmount)}</strong>
+              </article>
 
-          <article className="summary__card">
-            <span>Средний расход</span>
-            <strong>{formatCurrency(averageAmount)}</strong>
-          </article>
-        </section>
+              <article className="summary__card">
+                <span>Количество записей</span>
+                <strong>{filteredExpenses.length}</strong>
+              </article>
 
-        <section className="panel">
-          <div className="panel__header">
-            <h2>Добавить расход</h2>
-            <p>Заполните данные о расходе и сохраните запись.</p>
-          </div>
+              <article className="summary__card">
+                <span>Средний расход</span>
+                <strong>{formatCurrency(averageAmount)}</strong>
+              </article>
+            </section>
 
-          <form className="expense-form" onSubmit={handleSubmit}>
-            <label>
-              <span>Дата</span>
-              <input
-                type="date"
-                value={date}
-                onChange={(event) => {
-                  setDate(event.target.value)
-                  event.currentTarget.blur()
-                }}
-              />
-            </label>
+            <section className="panel">
+              <div className="panel__header panel__header--row">
+                <div>
+                  <h2>Последние расходы</h2>
+                  <p>Последние записи за выбранный период.</p>
+                </div>
 
-            <label>
-              <span>Категория</span>
-              <select
-                value={category}
-                onChange={(event) => setCategory(event.target.value)}
-              >
-                {allCategories.map((currentCategory) => (
-                  <option key={currentCategory} value={currentCategory}>
-                    {currentCategory}
-                  </option>
-                ))}
-              </select>
-            </label>
+                <button
+                  className="small-button"
+                  type="button"
+                  onClick={() => setActiveSection('expenses')}
+                >
+                  Все расходы
+                </button>
+              </div>
 
-            <label>
-              <span>Описание</span>
-              <input
-                type="text"
-                placeholder="Например: продукты в магазине"
-                value={description}
-                onChange={(event) => setDescription(event.target.value)}
-              />
-            </label>
+              {latestExpenses.length === 0 ? (
+                <div className="empty-state">За выбранный период расходов нет.</div>
+              ) : (
+                <div className="expense-list">
+                  {latestExpenses.map((expense) => (
+                    <article className="expense-card" key={expense.id}>
+                      <div>
+                        <p className="expense-card__date">{formatDate(expense.date)}</p>
+                        <h3>{expense.description}</h3>
+                        <p className="expense-card__category">{expense.category}</p>
+                      </div>
 
-            <label>
-              <span>Сумма</span>
-              <input
-                type="text"
-                inputMode="decimal"
-                placeholder="0"
-                value={amount}
-                onChange={(event) => setAmount(sanitizeAmountInput(event.target.value))}
-              />
-            </label>
+                      <div className="expense-card__side">
+                        <strong>{formatCurrency(expense.amount)}</strong>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              )}
+            </section>
+          </>
+        )}
 
-            <button className="button" type="submit">
-              Добавить расход
-            </button>
-          </form>
-        </section>
+        {activeSection === 'expenses' && (
+          <>
+            <section className="section-heading">
+              <h2>Расходы</h2>
+              <p>Добавление, редактирование и удаление расходов.</p>
+            </section>
 
-        <section className="panel">
-          <div className="panel__header">
-            <h2>Список расходов</h2>
-            <p>Все добавленные расходы сохраняются локально в браузере.</p>
-          </div>
+            <section className="panel">
+              <div className="panel__header">
+                <h2>Добавить расход</h2>
+                <p>Заполните данные о расходе и сохраните запись.</p>
+              </div>
 
-          {sortedExpenses.length === 0 ? (
-            <div className="empty-state">
-              За выбранный период расходов нет.
+              <form className="expense-form" onSubmit={handleSubmit}>
+                <label>
+                  <span>Дата</span>
+                  <input
+                    type="date"
+                    value={date}
+                    onChange={(event) => {
+                      setDate(event.target.value)
+                      event.currentTarget.blur()
+                    }}
+                  />
+                </label>
+
+                <label>
+                  <span>Категория</span>
+                  <select
+                    value={category}
+                    onChange={(event) => setCategory(event.target.value)}
+                  >
+                    {allCategories.map((currentCategory) => (
+                      <option key={currentCategory} value={currentCategory}>
+                        {currentCategory}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label>
+                  <span>Описание</span>
+                  <input
+                    type="text"
+                    placeholder="Например: продукты в магазине"
+                    value={description}
+                    onChange={(event) => setDescription(event.target.value)}
+                  />
+                </label>
+
+                <label>
+                  <span>Сумма</span>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    placeholder="0"
+                    value={amount}
+                    onChange={(event) =>
+                      setAmount(sanitizeAmountInput(event.target.value))
+                    }
+                  />
+                </label>
+
+                <button className="button" type="submit">
+                  Добавить расход
+                </button>
+              </form>
+            </section>
+
+            <section className="panel">
+              <div className="panel__header">
+                <h2>Список расходов</h2>
+                <p>Список зависит от фильтра на главном экране.</p>
+              </div>
+
+              {sortedExpenses.length === 0 ? (
+                <div className="empty-state">За выбранный период расходов нет.</div>
+              ) : (
+                <div className="expense-list">
+                  {sortedExpenses.map((expense) => {
+                    const isEditing = editingExpenseId === expense.id
+
+                    return (
+                      <article
+                        className={`expense-card ${
+                          isEditing ? 'expense-card--editing' : ''
+                        }`}
+                        key={expense.id}
+                      >
+                        {isEditing ? (
+                          <form
+                            className="expense-edit-form"
+                            onSubmit={(event) => handleEditSubmit(event, expense.id)}
+                          >
+                            <label>
+                              <span>Дата</span>
+                              <input
+                                type="date"
+                                value={editDate}
+                                onChange={(event) => {
+                                  setEditDate(event.target.value)
+                                  event.currentTarget.blur()
+                                }}
+                              />
+                            </label>
+
+                            <label>
+                              <span>Категория</span>
+                              <select
+                                value={editCategory}
+                                onChange={(event) =>
+                                  setEditCategory(event.target.value)
+                                }
+                              >
+                                {allCategories.map((currentCategory) => (
+                                  <option key={currentCategory} value={currentCategory}>
+                                    {currentCategory}
+                                  </option>
+                                ))}
+                              </select>
+                            </label>
+
+                            <label>
+                              <span>Описание</span>
+                              <input
+                                type="text"
+                                value={editDescription}
+                                onChange={(event) =>
+                                  setEditDescription(event.target.value)
+                                }
+                              />
+                            </label>
+
+                            <label>
+                              <span>Сумма</span>
+                              <input
+                                type="text"
+                                inputMode="decimal"
+                                value={editAmount}
+                                onChange={(event) =>
+                                  setEditAmount(sanitizeAmountInput(event.target.value))
+                                }
+                              />
+                            </label>
+
+                            <div className="expense-edit-form__actions">
+                              <button className="button" type="submit">
+                                Сохранить
+                              </button>
+
+                              <button
+                                className="secondary-button"
+                                type="button"
+                                onClick={cancelEditing}
+                              >
+                                Отмена
+                              </button>
+                            </div>
+                          </form>
+                        ) : (
+                          <>
+                            <div>
+                              <p className="expense-card__date">
+                                {formatDate(expense.date)}
+                              </p>
+                              <h3>{expense.description}</h3>
+                              <p className="expense-card__category">
+                                {expense.category}
+                              </p>
+                            </div>
+
+                            <div className="expense-card__side">
+                              <strong>{formatCurrency(expense.amount)}</strong>
+
+                              <div className="expense-card__actions">
+                                <button
+                                  className="edit-button"
+                                  type="button"
+                                  onClick={() => startEditing(expense)}
+                                >
+                                  Редактировать
+                                </button>
+
+                                <button
+                                  className="delete-button"
+                                  type="button"
+                                  onClick={() => handleDelete(expense.id)}
+                                >
+                                  Удалить
+                                </button>
+                              </div>
+                            </div>
+                          </>
+                        )}
+                      </article>
+                    )
+                  })}
+                </div>
+              )}
+            </section>
+          </>
+        )}
+
+        {activeSection === 'reports' && (
+          <section className="panel">
+            <div className="panel__header">
+              <h2>Отчет за период</h2>
+              <p>
+                Выберите даты и категорию, чтобы получить сводку и скачать Excel-отчет.
+              </p>
             </div>
-          ) : (
-            <div className="expense-list">
-              {sortedExpenses.map((expense) => {
-                const isEditing = editingExpenseId === expense.id
+
+            <div className="report-filters">
+              <label>
+                <span>Дата начала</span>
+                <input
+                  type="date"
+                  value={reportStartDate}
+                  onChange={(event) => {
+                    setReportStartDate(event.target.value)
+                    event.currentTarget.blur()
+                  }}
+                />
+              </label>
+
+              <label>
+                <span>Дата окончания</span>
+                <input
+                  type="date"
+                  value={reportEndDate}
+                  onChange={(event) => {
+                    setReportEndDate(event.target.value)
+                    event.currentTarget.blur()
+                  }}
+                />
+              </label>
+
+              <label>
+                <span>Категория</span>
+                <select
+                  value={reportCategory}
+                  onChange={(event) => setReportCategory(event.target.value)}
+                >
+                  <option value={ALL_CATEGORIES_OPTION}>
+                    {ALL_CATEGORIES_OPTION}
+                  </option>
+                  {allCategories.map((currentCategory) => (
+                    <option key={currentCategory} value={currentCategory}>
+                      {currentCategory}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            {isReportDateRangeInvalid ? (
+              <div className="empty-state">
+                Дата начала отчета не может быть позже даты окончания.
+              </div>
+            ) : (
+              <>
+                <section className="report-summary">
+                  <article className="summary__card">
+                    <span>Сумма отчета</span>
+                    <strong>{formatCurrency(reportTotalAmount)}</strong>
+                  </article>
+
+                  <article className="summary__card">
+                    <span>Операций</span>
+                    <strong>{reportExpenses.length}</strong>
+                  </article>
+
+                  <article className="summary__card">
+                    <span>Средний расход в день</span>
+                    <strong>{formatCurrency(reportAveragePerDay)}</strong>
+                  </article>
+                </section>
+
+                <button className="button" type="button" onClick={handleDownloadExcel}>
+                  Скачать Excel-отчет
+                </button>
+
+                <div className="report-block">
+                  <h3>Расходы по категориям</h3>
+
+                  {reportCategorySummary.length === 0 ? (
+                    <div className="empty-state">Нет данных за выбранный период.</div>
+                  ) : (
+                    <div className="table-wrapper">
+                      <table>
+                        <thead>
+                          <tr>
+                            <th>Категория</th>
+                            <th>Операций</th>
+                            <th>Сумма</th>
+                            <th>Доля</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {reportCategorySummary.map((item) => (
+                            <tr key={item.category}>
+                              <td>{item.category}</td>
+                              <td>{item.count}</td>
+                              <td>{formatCurrency(item.amount)}</td>
+                              <td>{item.percent.toFixed(1)}%</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+
+                <div className="report-block">
+                  <h3>Расходы по датам</h3>
+
+                  {reportDailySummary.length === 0 ? (
+                    <div className="empty-state">Нет данных за выбранный период.</div>
+                  ) : (
+                    <div className="table-wrapper">
+                      <table>
+                        <thead>
+                          <tr>
+                            <th>Дата</th>
+                            <th>Операций</th>
+                            <th>Сумма</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {reportDailySummary.map((item) => (
+                            <tr key={item.date}>
+                              <td>{formatDate(item.date)}</td>
+                              <td>{item.count}</td>
+                              <td>{formatCurrency(item.amount)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+
+                <div className="report-block">
+                  <h3>Детализация</h3>
+
+                  {reportExpenses.length === 0 ? (
+                    <div className="empty-state">Нет расходов для детализации.</div>
+                  ) : (
+                    <div className="table-wrapper">
+                      <table>
+                        <thead>
+                          <tr>
+                            <th>Дата</th>
+                            <th>Категория</th>
+                            <th>Описание</th>
+                            <th>Сумма</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {reportExpenses.map((expense) => (
+                            <tr key={expense.id}>
+                              <td>{formatDate(expense.date)}</td>
+                              <td>{expense.category}</td>
+                              <td>{expense.description}</td>
+                              <td>{formatCurrency(expense.amount)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+          </section>
+        )}
+
+        {activeSection === 'categories' && (
+          <section className="panel">
+            <div className="panel__header">
+              <h2>Категории</h2>
+              <p>
+                Добавляйте собственные категории. Они будут доступны в расходах,
+                фильтрах, отчетах и резервных копиях.
+              </p>
+            </div>
+
+            <form className="category-form" onSubmit={handleAddCategory}>
+              <label>
+                <span>Новая категория</span>
+                <input
+                  type="text"
+                  placeholder="Например: Автомобиль"
+                  value={newCategoryName}
+                  onChange={(event) => setNewCategoryName(event.target.value)}
+                />
+              </label>
+
+              <button className="button" type="submit">
+                Добавить категорию
+              </button>
+            </form>
+
+            <div className="category-list">
+              {allCategories.map((currentCategory) => {
+                const isSystemCategory = hasCategoryName(
+                  DEFAULT_CATEGORIES,
+                  currentCategory,
+                )
+                const isEditingCategory = editingCategoryName === currentCategory
 
                 return (
-                  <article
-                    className={`expense-card ${isEditing ? 'expense-card--editing' : ''}`}
-                    key={expense.id}
-                  >
-                    {isEditing ? (
+                  <article className="category-card" key={currentCategory}>
+                    {isEditingCategory ? (
                       <form
-                        className="expense-edit-form"
-                        onSubmit={(event) => handleEditSubmit(event, expense.id)}
+                        className="category-edit-form"
+                        onSubmit={handleRenameCategory}
                       >
                         <label>
-                          <span>Дата</span>
-                          <input
-                            type="date"
-                            value={editDate}
-                            onChange={(event) => {
-                              setEditDate(event.target.value)
-                              event.currentTarget.blur()
-                            }}
-                          />
-                        </label>
-
-                        <label>
-                          <span>Категория</span>
-                          <select
-                            value={editCategory}
-                            onChange={(event) => setEditCategory(event.target.value)}
-                          >
-                            {allCategories.map((currentCategory) => (
-                              <option key={currentCategory} value={currentCategory}>
-                                {currentCategory}
-                              </option>
-                            ))}
-                          </select>
-                        </label>
-
-                        <label>
-                          <span>Описание</span>
+                          <span>Название категории</span>
                           <input
                             type="text"
-                            value={editDescription}
-                            onChange={(event) => setEditDescription(event.target.value)}
-                          />
-                        </label>
-
-                        <label>
-                          <span>Сумма</span>
-                          <input
-                            type="text"
-                            inputMode="decimal"
-                            value={editAmount}
+                            value={editedCategoryName}
                             onChange={(event) =>
-                              setEditAmount(sanitizeAmountInput(event.target.value))
+                              setEditedCategoryName(event.target.value)
                             }
                           />
                         </label>
 
-                        <div className="expense-edit-form__actions">
-                          <button className="button" type="submit">
+                        <div className="category-card__actions">
+                          <button className="edit-button" type="submit">
                             Сохранить
                           </button>
 
                           <button
-                            className="secondary-button"
+                            className="delete-button"
                             type="button"
-                            onClick={cancelEditing}
+                            onClick={cancelCategoryEditing}
                           >
                             Отмена
                           </button>
@@ -1050,340 +1420,75 @@ function App() {
                     ) : (
                       <>
                         <div>
-                          <p className="expense-card__date">
-                            {formatDate(expense.date)}
+                          <h3>{currentCategory}</h3>
+                          <p>
+                            {isSystemCategory
+                              ? 'Системная категория'
+                              : 'Пользовательская категория'}
                           </p>
-                          <h3>{expense.description}</h3>
-                          <p className="expense-card__category">{expense.category}</p>
                         </div>
 
-                        <div className="expense-card__side">
-                          <strong>{formatCurrency(expense.amount)}</strong>
-
-                          <div className="expense-card__actions">
+                        {!isSystemCategory && (
+                          <div className="category-card__actions">
                             <button
                               className="edit-button"
                               type="button"
-                              onClick={() => startEditing(expense)}
+                              onClick={() => startCategoryEditing(currentCategory)}
                             >
-                              Редактировать
+                              Переименовать
                             </button>
 
                             <button
                               className="delete-button"
                               type="button"
-                              onClick={() => handleDelete(expense.id)}
+                              onClick={() => handleDeleteCategory(currentCategory)}
                             >
                               Удалить
                             </button>
                           </div>
-                        </div>
+                        )}
                       </>
                     )}
                   </article>
                 )
               })}
             </div>
-          )}
-        </section>
+          </section>
+        )}
 
-        <section className="panel">
-          <div className="panel__header">
-            <h2>Отчет за период</h2>
-            <p>
-              Выберите даты и категорию, чтобы получить сводку и скачать Excel-отчет.
-            </p>
-          </div>
-
-          <div className="report-filters">
-            <label>
-              <span>Дата начала</span>
-              <input
-                type="date"
-                value={reportStartDate}
-                onChange={(event) => {
-                  setReportStartDate(event.target.value)
-                  event.currentTarget.blur()
-                }}
-              />
-            </label>
-
-            <label>
-              <span>Дата окончания</span>
-              <input
-                type="date"
-                value={reportEndDate}
-                onChange={(event) => {
-                  setReportEndDate(event.target.value)
-                  event.currentTarget.blur()
-                }}
-              />
-            </label>
-
-            <label>
-              <span>Категория</span>
-              <select
-                value={reportCategory}
-                onChange={(event) => setReportCategory(event.target.value)}
-              >
-                <option value={ALL_CATEGORIES_OPTION}>{ALL_CATEGORIES_OPTION}</option>
-                {allCategories.map((currentCategory) => (
-                  <option key={currentCategory} value={currentCategory}>
-                    {currentCategory}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-
-          {isReportDateRangeInvalid ? (
-            <div className="empty-state">
-              Дата начала отчета не может быть позже даты окончания.
+        {activeSection === 'settings' && (
+          <section className="panel">
+            <div className="panel__header">
+              <h2>Настройки</h2>
+              <p>
+                Здесь можно создать резервную копию данных или восстановить их из файла.
+              </p>
             </div>
-          ) : (
-            <>
-              <section className="report-summary">
-                <article className="summary__card">
-                  <span>Сумма отчета</span>
-                  <strong>{formatCurrency(reportTotalAmount)}</strong>
-                </article>
 
-                <article className="summary__card">
-                  <span>Операций</span>
-                  <strong>{reportExpenses.length}</strong>
-                </article>
+            <div className="settings-note">
+              <h3>Где хранятся данные?</h3>
+              <p>
+                Расходы и категории хранятся локально на этом устройстве. У каждого
+                телефона или компьютера будут свои данные.
+              </p>
+            </div>
 
-                <article className="summary__card">
-                  <span>Средний расход в день</span>
-                  <strong>{formatCurrency(reportAveragePerDay)}</strong>
-                </article>
-              </section>
-
-              <button className="button" type="button" onClick={handleDownloadExcel}>
-                Скачать Excel-отчет
+            <div className="backup-actions">
+              <button className="button" type="button" onClick={handleCreateBackup}>
+                Скачать резервную копию
               </button>
 
-              <div className="report-block">
-                <h3>Расходы по категориям</h3>
-
-                {reportCategorySummary.length === 0 ? (
-                  <div className="empty-state">Нет данных за выбранный период.</div>
-                ) : (
-                  <div className="table-wrapper">
-                    <table>
-                      <thead>
-                        <tr>
-                          <th>Категория</th>
-                          <th>Операций</th>
-                          <th>Сумма</th>
-                          <th>Доля</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {reportCategorySummary.map((item) => (
-                          <tr key={item.category}>
-                            <td>{item.category}</td>
-                            <td>{item.count}</td>
-                            <td>{formatCurrency(item.amount)}</td>
-                            <td>{item.percent.toFixed(1)}%</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-
-              <div className="report-block">
-                <h3>Расходы по датам</h3>
-
-                {reportDailySummary.length === 0 ? (
-                  <div className="empty-state">Нет данных за выбранный период.</div>
-                ) : (
-                  <div className="table-wrapper">
-                    <table>
-                      <thead>
-                        <tr>
-                          <th>Дата</th>
-                          <th>Операций</th>
-                          <th>Сумма</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {reportDailySummary.map((item) => (
-                          <tr key={item.date}>
-                            <td>{formatDate(item.date)}</td>
-                            <td>{item.count}</td>
-                            <td>{formatCurrency(item.amount)}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-
-              <div className="report-block">
-                <h3>Детализация</h3>
-
-                {reportExpenses.length === 0 ? (
-                  <div className="empty-state">Нет расходов для детализации.</div>
-                ) : (
-                  <div className="table-wrapper">
-                    <table>
-                      <thead>
-                        <tr>
-                          <th>Дата</th>
-                          <th>Категория</th>
-                          <th>Описание</th>
-                          <th>Сумма</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {reportExpenses.map((expense) => (
-                          <tr key={expense.id}>
-                            <td>{formatDate(expense.date)}</td>
-                            <td>{expense.category}</td>
-                            <td>{expense.description}</td>
-                            <td>{formatCurrency(expense.amount)}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-            </>
-          )}
-        </section>
-
-        <section className="panel">
-          <div className="panel__header">
-            <h2>Категории</h2>
-            <p>
-              Добавляйте собственные категории. Они будут доступны в расходах,
-              фильтрах, отчетах и резервных копиях.
-            </p>
-          </div>
-
-          <form className="category-form" onSubmit={handleAddCategory}>
-            <label>
-              <span>Новая категория</span>
-              <input
-                type="text"
-                placeholder="Например: Автомобиль"
-                value={newCategoryName}
-                onChange={(event) => setNewCategoryName(event.target.value)}
-              />
-            </label>
-
-            <button className="button" type="submit">
-              Добавить категорию
-            </button>
-          </form>
-
-          <div className="category-list">
-            {allCategories.map((currentCategory) => {
-              const isSystemCategory = hasCategoryName(
-                DEFAULT_CATEGORIES,
-                currentCategory,
-              )
-              const isEditingCategory = editingCategoryName === currentCategory
-
-              return (
-                <article className="category-card" key={currentCategory}>
-                  {isEditingCategory ? (
-                    <form
-                      className="category-edit-form"
-                      onSubmit={handleRenameCategory}
-                    >
-                      <label>
-                        <span>Название категории</span>
-                        <input
-                          type="text"
-                          value={editedCategoryName}
-                          onChange={(event) =>
-                            setEditedCategoryName(event.target.value)
-                          }
-                        />
-                      </label>
-
-                      <div className="category-card__actions">
-                        <button className="edit-button" type="submit">
-                          Сохранить
-                        </button>
-
-                        <button
-                          className="delete-button"
-                          type="button"
-                          onClick={cancelCategoryEditing}
-                        >
-                          Отмена
-                        </button>
-                      </div>
-                    </form>
-                  ) : (
-                    <>
-                      <div>
-                        <h3>{currentCategory}</h3>
-                        <p>
-                          {isSystemCategory
-                            ? 'Системная категория'
-                            : 'Пользовательская категория'}
-                        </p>
-                      </div>
-
-                      {!isSystemCategory && (
-                        <div className="category-card__actions">
-                          <button
-                            className="edit-button"
-                            type="button"
-                            onClick={() => startCategoryEditing(currentCategory)}
-                          >
-                            Переименовать
-                          </button>
-
-                          <button
-                            className="delete-button"
-                            type="button"
-                            onClick={() => handleDeleteCategory(currentCategory)}
-                          >
-                            Удалить
-                          </button>
-                        </div>
-                      )}
-                    </>
-                  )}
-                </article>
-              )
-            })}
-          </div>
-        </section>
-
-        <section className="panel">
-          <div className="panel__header">
-            <h2>Резервное копирование</h2>
-            <p>
-              Создайте файл с копией расходов, чтобы защитить данные перед будущими
-              обновлениями приложения.
-            </p>
-          </div>
-
-          <div className="backup-actions">
-            <button className="button" type="button" onClick={handleCreateBackup}>
-              Скачать резервную копию
-            </button>
-
-            <label className="restore-button">
-              Восстановить из файла
-              <input
-                type="file"
-                accept="application/json,.json"
-                onChange={handleRestoreBackup}
-              />
-            </label>
-          </div>
-        </section>
+              <label className="restore-button">
+                Восстановить из файла
+                <input
+                  type="file"
+                  accept="application/json,.json"
+                  onChange={handleRestoreBackup}
+                />
+              </label>
+            </div>
+          </section>
+        )}
       </section>
     </main>
   )
