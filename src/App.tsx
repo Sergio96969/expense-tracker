@@ -266,6 +266,7 @@ function setColumnWidths(sheet: XLSX.WorkSheet, widths: number[]) {
 
 function App() {
   const [activeSection, setActiveSection] = useState<AppSection>('dashboard')
+  const [isQuickAddOpen, setIsQuickAddOpen] = useState(false)
 
   const [expenses, setExpenses] = useState<Expense[]>(() => {
     const savedExpenses = localStorage.getItem(STORAGE_KEY)
@@ -523,14 +524,12 @@ function App() {
     return Array.from(summary.values()).sort((a, b) => a.date.localeCompare(b.date))
   }, [reportExpenses])
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-
+  function createExpense() {
     const numericAmount = Number(amount.replace(',', '.'))
 
     if (!date || !category || !numericAmount || numericAmount <= 0) {
       setMessage('Заполните дату, категорию и сумму больше 0')
-      return
+      return false
     }
 
     const newExpense: Expense = {
@@ -546,6 +545,24 @@ function App() {
     setDescription('')
     setAmount('')
     setMessage('Расход успешно добавлен')
+
+    return true
+  }
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+
+    createExpense()
+  }
+
+  function handleQuickAddSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+
+    const isCreated = createExpense()
+
+    if (isCreated) {
+      setIsQuickAddOpen(false)
+    }
   }
 
   function startEditing(expense: Expense) {
@@ -804,7 +821,7 @@ function App() {
   function handleCreateBackup() {
     const backupData: BackupData = {
       appName: 'Expense Tracker',
-      version: '1.4.0',
+      version: '1.5.0',
       createdAt: new Date().toISOString(),
       expenses,
       customCategories,
@@ -1629,6 +1646,92 @@ function App() {
           </section>
         )}
       </section>
+
+      <button
+        className="quick-add-button"
+        type="button"
+        onClick={() => setIsQuickAddOpen(true)}
+        aria-label="Быстро добавить расход"
+      >
+        +
+      </button>
+
+      {isQuickAddOpen && (
+        <div className="quick-add-overlay">
+          <section className="quick-add-modal">
+            <div className="quick-add-modal__header">
+              <div>
+                <h2>Быстрый расход</h2>
+                <p>Добавьте расход без перехода между разделами.</p>
+              </div>
+
+              <button
+                className="quick-add-modal__close"
+                type="button"
+                onClick={() => setIsQuickAddOpen(false)}
+                aria-label="Закрыть"
+              >
+                ×
+              </button>
+            </div>
+
+            <form className="quick-add-form" onSubmit={handleQuickAddSubmit}>
+              <label>
+                <span>Дата</span>
+                <input
+                  type="date"
+                  value={date}
+                  onChange={(event) => {
+                    setDate(event.target.value)
+                    event.currentTarget.blur()
+                  }}
+                />
+              </label>
+
+              <label>
+                <span>Категория</span>
+                <select
+                  value={category}
+                  onChange={(event) => setCategory(event.target.value)}
+                >
+                  {allCategories.map((currentCategory) => (
+                    <option key={currentCategory} value={currentCategory}>
+                      {currentCategory}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label>
+                <span>Описание</span>
+                <input
+                  type="text"
+                  placeholder="Например: кофе"
+                  value={description}
+                  onChange={(event) => setDescription(event.target.value)}
+                />
+              </label>
+
+              <label>
+                <span>Сумма</span>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  placeholder="0"
+                  value={amount}
+                  onChange={(event) =>
+                    setAmount(sanitizeAmountInput(event.target.value))
+                  }
+                />
+              </label>
+
+              <button className="button" type="submit">
+                Добавить расход
+              </button>
+            </form>
+          </section>
+        </div>
+      )}
     </main>
   )
 }
