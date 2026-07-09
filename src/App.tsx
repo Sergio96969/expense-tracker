@@ -52,12 +52,24 @@ function getCurrentYear() {
   return String(new Date().getFullYear())
 }
 
+function sanitizeAmountInput(value: string) {
+  return value.replace(/[^\d.,]/g, '').replace(',', '.')
+}
+
 function formatCurrency(value: number) {
   return new Intl.NumberFormat('ru-RU', {
     style: 'currency',
     currency: 'RUB',
-    maximumFractionDigits: 0,
+    maximumFractionDigits: 2,
   }).format(value)
+}
+
+function formatDate(date: string) {
+  return new Intl.DateTimeFormat('ru-RU', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  }).format(new Date(`${date}T00:00:00`))
 }
 
 function App() {
@@ -83,6 +95,12 @@ function App() {
   const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth())
   const [selectedYear, setSelectedYear] = useState(getCurrentYear())
   const [selectedCategory, setSelectedCategory] = useState('Все категории')
+
+  const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null)
+  const [editDate, setEditDate] = useState('')
+  const [editCategory, setEditCategory] = useState(DEFAULT_CATEGORIES[0])
+  const [editDescription, setEditDescription] = useState('')
+  const [editAmount, setEditAmount] = useState('')
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(expenses))
@@ -166,6 +184,50 @@ function App() {
     setMessage('Расход успешно добавлен')
   }
 
+  function startEditing(expense: Expense) {
+    setEditingExpenseId(expense.id)
+    setEditDate(expense.date)
+    setEditCategory(expense.category)
+    setEditDescription(expense.description)
+    setEditAmount(String(expense.amount))
+  }
+
+  function cancelEditing() {
+    setEditingExpenseId(null)
+    setEditDate('')
+    setEditCategory(DEFAULT_CATEGORIES[0])
+    setEditDescription('')
+    setEditAmount('')
+  }
+
+  function handleEditSubmit(event: FormEvent<HTMLFormElement>, id: string) {
+    event.preventDefault()
+
+    const numericAmount = Number(editAmount.replace(',', '.'))
+
+    if (!editDate || !editCategory || !numericAmount || numericAmount <= 0) {
+      setMessage('Заполните дату, категорию и сумму больше 0')
+      return
+    }
+
+    setExpenses((currentExpenses) =>
+      currentExpenses.map((expense) =>
+        expense.id === id
+          ? {
+              ...expense,
+              date: editDate,
+              category: editCategory,
+              description: editDescription.trim() || 'Без описания',
+              amount: numericAmount,
+            }
+          : expense,
+      ),
+    )
+
+    cancelEditing()
+    setMessage('Расход обновлен')
+  }
+
   function handleDelete(id: string) {
     const shouldDelete = window.confirm('Удалить этот расход?')
 
@@ -176,6 +238,10 @@ function App() {
     setExpenses((currentExpenses) =>
       currentExpenses.filter((expense) => expense.id !== id),
     )
+
+    if (editingExpenseId === id) {
+      cancelEditing()
+    }
 
     setMessage('Расход удален')
   }
@@ -314,11 +380,7 @@ function App() {
                 inputMode="decimal"
                 placeholder="0"
                 value={amount}
-                onChange={(event) => {
-                  const onlyNumbers = event.target.value.replace(/[^\d.,]/g, '')
-                  const normalizedValue = onlyNumbers.replace(',', '.')
-                  setAmount(normalizedValue)
-                }}
+                onChange={(event) => setAmount(sanitizeAmountInput(event.target.value))}
               />
             </label>
 
@@ -340,26 +402,116 @@ function App() {
             </div>
           ) : (
             <div className="expense-list">
-              {sortedExpenses.map((expense) => (
-                <article className="expense-card" key={expense.id}>
-                  <div>
-                    <p className="expense-card__date">{expense.date}</p>
-                    <h3>{expense.description}</h3>
-                    <p className="expense-card__category">{expense.category}</p>
-                  </div>
+              {sortedExpenses.map((expense) => {
+                const isEditing = editingExpenseId === expense.id
 
-                  <div className="expense-card__side">
-                    <strong>{formatCurrency(expense.amount)}</strong>
-                    <button
-                      className="delete-button"
-                      type="button"
-                      onClick={() => handleDelete(expense.id)}
-                    >
-                      Удалить
-                    </button>
-                  </div>
-                </article>
-              ))}
+                return (
+                  <article
+                    className={`expense-card ${isEditing ? 'expense-card--editing' : ''}`}
+                    key={expense.id}
+                  >
+                    {isEditing ? (
+                      <form
+                        className="expense-edit-form"
+                        onSubmit={(event) => handleEditSubmit(event, expense.id)}
+                      >
+                        <label>
+                          <span>Дата</span>
+                          <input
+                            type="date"
+                            value={editDate}
+                            onChange={(event) => {
+                              setEditDate(event.target.value)
+                              event.currentTarget.blur()
+                            }}
+                          />
+                        </label>
+
+                        <label>
+                          <span>Категория</span>
+                          <select
+                            value={editCategory}
+                            onChange={(event) => setEditCategory(event.target.value)}
+                          >
+                            {DEFAULT_CATEGORIES.map((currentCategory) => (
+                              <option key={currentCategory} value={currentCategory}>
+                                {currentCategory}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+
+                        <label>
+                          <span>Описание</span>
+                          <input
+                            type="text"
+                            value={editDescription}
+                            onChange={(event) => setEditDescription(event.target.value)}
+                          />
+                        </label>
+
+                        <label>
+                          <span>Сумма</span>
+                          <input
+                            type="text"
+                            inputMode="decimal"
+                            value={editAmount}
+                            onChange={(event) =>
+                              setEditAmount(sanitizeAmountInput(event.target.value))
+                            }
+                          />
+                        </label>
+
+                        <div className="expense-edit-form__actions">
+                          <button className="button" type="submit">
+                            Сохранить
+                          </button>
+
+                          <button
+                            className="secondary-button"
+                            type="button"
+                            onClick={cancelEditing}
+                          >
+                            Отмена
+                          </button>
+                        </div>
+                      </form>
+                    ) : (
+                      <>
+                        <div>
+                          <p className="expense-card__date">
+                            {formatDate(expense.date)}
+                          </p>
+                          <h3>{expense.description}</h3>
+                          <p className="expense-card__category">{expense.category}</p>
+                        </div>
+
+                        <div className="expense-card__side">
+                          <strong>{formatCurrency(expense.amount)}</strong>
+
+                          <div className="expense-card__actions">
+                            <button
+                              className="edit-button"
+                              type="button"
+                              onClick={() => startEditing(expense)}
+                            >
+                              Редактировать
+                            </button>
+
+                            <button
+                              className="delete-button"
+                              type="button"
+                              onClick={() => handleDelete(expense.id)}
+                            >
+                              Удалить
+                            </button>
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </article>
+                )
+              })}
             </div>
           )}
         </section>
